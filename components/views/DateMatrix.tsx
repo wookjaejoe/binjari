@@ -53,7 +53,7 @@ export function DateMatrix({
 
   return (
     <div className="rail">
-      <table className="w-full border-separate border-spacing-0 text-[11.5px]">
+      <table className="w-full border-separate border-spacing-0 text-xs">
         <thead>
           <tr>
             <th
@@ -64,7 +64,7 @@ export function DateMatrix({
               <th
                 key={group.campName}
                 colSpan={group.columns.length}
-                className="border-r border-b border-line bg-surface px-2 py-1 text-left text-[10.5px] font-semibold whitespace-nowrap text-muted"
+                className="border-r border-b border-line bg-surface px-2 py-1 text-left text-xs font-semibold whitespace-nowrap text-muted"
               >
                 {group.campName}
               </th>
@@ -80,7 +80,7 @@ export function DateMatrix({
                   column.kind === "room" && "text-subtle",
                 )}
               >
-                <span className="line-clamp-2 text-center text-[9.5px] leading-[1.25] font-medium break-all">
+                <span className="line-clamp-2 text-center text-2xs leading-[1.25] font-medium break-all">
                   {column.label}
                 </span>
               </th>
@@ -98,7 +98,7 @@ export function DateMatrix({
                   <tr>
                     <th
                       colSpan={columns.length + 1}
-                      className="sticky left-0 z-20 border-b border-line bg-surface-2 px-2 py-0.5 text-left text-[10.5px] font-semibold num"
+                      className="sticky left-0 z-20 border-b border-line bg-surface-2 px-2 py-0.5 text-left text-xs font-semibold num"
                     >
                       {Number(date.slice(5, 7))}월
                     </th>
@@ -111,12 +111,12 @@ export function DateMatrix({
                       date === today && "font-semibold",
                     )}
                   >
-                    <span className="block text-[11.5px]">
+                    <span className="block text-xs">
                       {Number(date.slice(8, 10))}
                     </span>
                     <span
                       className={cx(
-                        "block text-[9.5px]",
+                        "block text-2xs",
                         [0, 6].includes(dow) ? "text-warn" : "text-subtle",
                       )}
                     >

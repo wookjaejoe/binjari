@@ -21,7 +21,7 @@ function BookingButton({
   const { data: target, isPending, error } = useBookingTarget(campId, date, nights);
 
   if (error) {
-    return <p className="text-[11.5px] text-warn">예약 링크를 만들지 못했습니다.</p>;
+    return <p className="text-xs text-warn">예약 링크를 만들지 못했습니다.</p>;
   }
 
   return (
@@ -32,7 +32,7 @@ function BookingButton({
       <button
         type="submit"
         disabled={isPending || !target}
-        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-inverse py-2.5 text-[13px] font-semibold text-inverse-fg disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-inverse py-2.5 text-sm font-semibold text-inverse-fg disabled:opacity-50"
       >
         {isPending && <Spinner className="border-t-inverse-fg" />}
         {campName} 예약 페이지 열기
@@ -105,7 +105,7 @@ export function DayDetail({
                 nights={nights}
               />
             ))}
-            <p className="text-center text-[10.5px] text-subtle">
+            <p className="text-center text-xs text-subtle">
               새 탭에서 이 일정이 선택된 상태로 열립니다
             </p>
           </div>
@@ -117,7 +117,7 @@ export function DayDetail({
           const campRows = zoneRows.filter((row) => row.campId === camp.id);
           return (
             <section key={camp.id} className="px-4 py-3">
-              <h3 className="mb-2 text-[11px] tracking-wide text-subtle">
+              <h3 className="mb-2 text-xs tracking-wide text-subtle">
                 {camp.name}
               </h3>
 
@@ -141,7 +141,7 @@ export function DayDetail({
                       <div className="flex items-baseline gap-2">
                         <span
                           className={cx(
-                            "text-[13px]",
+                            "text-sm",
                             cell.state === "open" ? "font-medium" : "text-muted",
                           )}
                         >
@@ -149,7 +149,7 @@ export function DayDetail({
                         </span>
                         <span
                           className={cx(
-                            "text-[12px] num",
+                            "text-xs num",
                             cell.state === "open"
                               ? "font-semibold"
                               : "text-subtle",
@@ -164,7 +164,7 @@ export function DayDetail({
                                 : "조회 불가"}
                         </span>
                         {cell.state === "open" && cell.amount != null && (
-                          <span className="ml-auto text-[12px] text-muted num">
+                          <span className="ml-auto text-xs text-muted num">
                             {won(cell.amount)}
                           </span>
                         )}
@@ -175,7 +175,7 @@ export function DayDetail({
                           {openRooms.map((room) => (
                             <span
                               key={room.no}
-                              className="rounded-md border border-line-strong px-1.5 py-0.5 text-[11.5px]"
+                              className="rounded-md border border-line-strong px-1.5 py-0.5 text-xs"
                             >
                               {room.name}
                             </span>

@@ -59,9 +59,9 @@ export function Sheet({
       >
         <header className="flex shrink-0 items-start gap-3 border-b border-line px-4 pt-3.5 pb-3">
           <div className="min-w-0 flex-1">
-            <h2 className="text-[14.5px] font-semibold">{title}</h2>
+            <h2 className="text-base font-semibold">{title}</h2>
             {subtitle && (
-              <p className="mt-0.5 text-[11.5px] text-muted">{subtitle}</p>
+              <p className="mt-0.5 text-xs text-muted">{subtitle}</p>
             )}
           </div>
           <button

@@ -66,7 +66,7 @@ export function SegBar<T extends string>({
           onClick={() => onChange(option.value)}
           className={cx(
             "rounded-md font-medium whitespace-nowrap transition-colors",
-            size === "sm" ? "px-2 py-1 text-[11.5px]" : "px-3 py-1.5 text-[13px]",
+            size === "sm" ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm",
             value === option.value
               ? "bg-surface text-fg shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
               : "text-muted active:text-fg",
@@ -97,7 +97,7 @@ export function Chip({
       aria-pressed={active}
       onClick={onClick}
       className={cx(
-        "rounded-full border px-2.5 py-1 text-[12px] whitespace-nowrap transition-colors",
+        "rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
         disabled && "opacity-40",
         active
           ? "border-transparent bg-inverse font-semibold text-inverse-fg"
@@ -124,7 +124,7 @@ export function Switch({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex items-center gap-2 text-[12px] text-muted"
+      className="flex items-center gap-2 text-xs text-muted"
     >
       <span
         className={cx(
@@ -216,8 +216,8 @@ export function Empty({
 }) {
   return (
     <div className="flex flex-col items-center gap-2 px-6 py-14 text-center">
-      <p className="text-[13.5px] font-medium">{title}</p>
-      {hint && <p className="max-w-[28ch] text-[12px] leading-relaxed text-muted">{hint}</p>}
+      <p className="text-base font-medium">{title}</p>
+      {hint && <p className="max-w-[28ch] text-xs leading-relaxed text-muted">{hint}</p>}
       {action}
     </div>
   );

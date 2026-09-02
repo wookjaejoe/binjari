@@ -7,13 +7,14 @@ import { reconcileSelection } from "@/lib/selection";
 
 export type ZoneSelection = { mode: "all" } | { mode: "some"; rooms: string[] };
 
-export type ViewMode = "stream" | "month" | "matrix";
+export type ViewMode = "heat" | "stream" | "matrix";
 
 type State = {
   nights: number;
   view: ViewMode;
   onlyOpen: boolean;
-  weekendOnly: boolean;
+  /** 체크인 요일 필터. 빈 배열은 제한 없음. 0=일 … 6=토 */
+  dows: number[];
   autoRefresh: boolean;
   /** campId → zoneNo → 선택 상태. 없는 키는 선택 해제. */
   selection: Record<string, Record<string, ZoneSelection>>;
@@ -26,7 +27,7 @@ type Actions = {
   setNights: (nights: number) => void;
   setView: (view: ViewMode) => void;
   setOnlyOpen: (onlyOpen: boolean) => void;
-  setWeekendOnly: (weekendOnly: boolean) => void;
+  setDows: (dows: number[]) => void;
   setAutoRefresh: (autoRefresh: boolean) => void;
   toggleExpanded: (key: string) => void;
   setCamp: (campId: string, zoneNos: string[], on: boolean) => void;
@@ -59,9 +60,9 @@ export const useSelection = create<State & Actions>()(
   persist(
     (set, get) => ({
       nights: 1,
-      view: "stream",
+      view: "heat",
       onlyOpen: false,
-      weekendOnly: false,
+      dows: [],
       autoRefresh: true,
       selection: {},
       expanded: {},
@@ -70,7 +71,8 @@ export const useSelection = create<State & Actions>()(
       setNights: (nights) => set({ nights }),
       setView: (view) => set({ view }),
       setOnlyOpen: (onlyOpen) => set({ onlyOpen }),
-      setWeekendOnly: (weekendOnly) => set({ weekendOnly }),
+      setDows: (dows) =>
+        set({ dows: dows.length === 7 ? [] : [...dows].sort((a, b) => a - b) }),
       setAutoRefresh: (autoRefresh) => set({ autoRefresh }),
 
       toggleExpanded: (key) =>
@@ -171,14 +173,17 @@ export const useSelection = create<State & Actions>()(
     }),
     {
       name: "camping-finder-selection",
-      version: 2,
+      version: 3,
       migrate: (persisted, version): Persisted => {
-        const old = (persisted ?? {}) as Partial<Persisted>;
+        const old = (persisted ?? {}) as Partial<Persisted> & {
+          weekendOnly?: boolean;
+        };
+        const views: ViewMode[] = ["heat", "stream", "matrix"];
         return {
           nights: old.nights ?? 1,
-          view: version >= 2 && old.view ? old.view : "stream",
+          view: old.view && views.includes(old.view) ? old.view : "heat",
           onlyOpen: old.onlyOpen ?? false,
-          weekendOnly: old.weekendOnly ?? false,
+          dows: old.dows ?? (version < 3 && old.weekendOnly ? [5, 6] : []),
           autoRefresh: old.autoRefresh ?? true,
           selection: old.selection ?? {},
           expanded: old.expanded ?? {},
@@ -188,7 +193,7 @@ export const useSelection = create<State & Actions>()(
         nights: state.nights,
         view: state.view,
         onlyOpen: state.onlyOpen,
-        weekendOnly: state.weekendOnly,
+        dows: state.dows,
         autoRefresh: state.autoRefresh,
         selection: state.selection,
         expanded: state.expanded,

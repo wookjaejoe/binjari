@@ -76,13 +76,13 @@ export function TargetPicker({ data }: { data: CampData[] }) {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="캠핑장 · 구역 · 객실 이름으로 찾기"
-          className="min-w-0 flex-1 rounded-md bg-surface-2 px-3 py-2 text-[13px] outline-none placeholder:text-subtle"
+          className="min-w-0 flex-1 rounded-md bg-surface-2 px-3 py-2 text-sm outline-none placeholder:text-subtle"
         />
         {pickedCamps > 0 && (
           <button
             type="button"
             onClick={clearAll}
-            className="shrink-0 text-[11.5px] whitespace-nowrap text-muted active:text-fg"
+            className="shrink-0 text-xs whitespace-nowrap text-muted active:text-fg"
           >
             전체 해제
           </button>
@@ -127,13 +127,13 @@ export function TargetPicker({ data }: { data: CampData[] }) {
                   <span className="min-w-0 flex-1">
                     <span
                       className={cx(
-                        "block truncate text-[13.5px] font-medium",
+                        "block truncate text-base font-medium",
                         blocked && "text-subtle",
                       )}
                     >
                       {camp.name}
                     </span>
-                    <span className="mt-px block truncate text-[11px] text-muted num">
+                    <span className="mt-px block truncate text-xs text-muted num">
                       {blocked
                         ? STATUS_LABEL[camp.status as "preparing" | "unopened"]
                         : camp.window
@@ -146,7 +146,7 @@ export function TargetPicker({ data }: { data: CampData[] }) {
               </div>
 
               {overStay && (
-                <p className="px-4 pb-2.5 text-[11px] text-warn">
+                <p className="px-4 pb-2.5 text-xs text-warn">
                   {`최대 ${camp.window?.maxStay}박까지만 예약할 수 있어 ${nights}박 결과가 없습니다.`}
                 </p>
               )}
@@ -154,7 +154,7 @@ export function TargetPicker({ data }: { data: CampData[] }) {
               {campOpen && !blocked && (
                 <ul className="pb-1">
                   {!zoneScan && (
-                    <li className="flex items-center gap-2 px-4 py-2 pl-11 text-[11.5px] text-muted">
+                    <li className="flex items-center gap-2 px-4 py-2 pl-11 text-xs text-muted">
                       <Spinner /> 구역 조회 중
                     </li>
                   )}
@@ -186,10 +186,10 @@ export function TargetPicker({ data }: { data: CampData[] }) {
                             className="flex min-w-0 flex-1 items-center gap-2 text-left"
                           >
                             <span className="min-w-0 flex-1">
-                              <span className="block truncate text-[13px]">
+                              <span className="block truncate text-sm">
                                 {zone.name}
                               </span>
-                              <span className="mt-px block truncate text-[11px] text-muted num">
+                              <span className="mt-px block truncate text-xs text-muted num">
                                 {zone.total}면
                                 {pick?.mode === "some" && ` · ${pick.rooms.length}개 선택`}
                                 {zone.maxPeop > 0 && ` · ${zone.maxPeop}인`}
@@ -202,12 +202,12 @@ export function TargetPicker({ data }: { data: CampData[] }) {
                         {zoneOpen && (
                           <ul className="pb-1">
                             {!roomScan && (
-                              <li className="flex items-center gap-2 py-1.5 pl-[70px] text-[11.5px] text-muted">
+                              <li className="flex items-center gap-2 py-1.5 pl-[70px] text-xs text-muted">
                                 <Spinner /> 객실 조회 중
                               </li>
                             )}
                             {roomScan && noCatalog && (
-                              <li className="py-1.5 pr-4 pl-[70px] text-[11.5px] leading-relaxed text-muted">
+                              <li className="py-1.5 pr-4 pl-[70px] text-xs leading-relaxed text-muted">
                                 조회 기간 내내 마감이라 개별 객실을 확인할 수 없습니다.
                               </li>
                             )}
@@ -225,13 +225,13 @@ export function TargetPicker({ data }: { data: CampData[] }) {
                                 />
                                 <span
                                   className={cx(
-                                    "min-w-0 flex-1 truncate text-[12.5px]",
+                                    "min-w-0 flex-1 truncate text-sm",
                                     !chosen.has(room.no) && "text-muted",
                                   )}
                                 >
                                   {room.name}
                                 </span>
-                                <span className="shrink-0 text-[11px] text-subtle num">
+                                <span className="shrink-0 text-xs text-subtle num">
                                   {wonShort(room.amount)}
                                 </span>
                               </li>
@@ -248,7 +248,7 @@ export function TargetPicker({ data }: { data: CampData[] }) {
         })}
 
         {!visible.length && (
-          <li className="px-4 py-10 text-center text-[12.5px] text-muted">
+          <li className="px-4 py-10 text-center text-sm text-muted">
             검색 결과가 없습니다
           </li>
         )}

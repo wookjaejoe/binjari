@@ -95,12 +95,12 @@ export function DayStream({
               )}
             >
               <span className="w-[46px] shrink-0">
-                <span className="block text-[16px] leading-none font-semibold num">
+                <span className="block text-lg leading-none font-semibold num">
                   {Number(date.slice(5, 7))}/{Number(date.slice(8, 10))}
                 </span>
                 <span
                   className={cx(
-                    "mt-1 block text-[11px]",
+                    "mt-1 block text-xs",
                     [0, 6].includes(dow) ? "text-warn" : "text-muted",
                   )}
                 >
@@ -118,7 +118,7 @@ export function DayStream({
                 {shown.map(({ row, cell }) => (
                   <span
                     key={row.key}
-                    className="flex max-w-full items-center gap-1 rounded-md border border-line bg-bg px-1.5 py-[3px] text-[11.5px]"
+                    className="flex max-w-full items-center gap-1 rounded-md border border-line bg-bg px-1.5 py-[3px] text-xs"
                   >
                     <span className="shrink-0 text-subtle">
                       {shortCamp(row.campName)}
@@ -128,18 +128,18 @@ export function DayStream({
                   </span>
                 ))}
                 {rest > 0 && (
-                  <span className="flex items-center px-1 text-[11.5px] text-subtle num">
+                  <span className="flex items-center px-1 text-xs text-subtle num">
                     +{rest}
                   </span>
                 )}
               </span>
 
               <span className="shrink-0 text-right">
-                <span className="block text-[11.5px] font-medium num">
+                <span className="block text-xs font-medium num">
                   {hits.length}곳
                 </span>
                 {cheapest != null && (
-                  <span className="mt-0.5 block text-[11px] text-subtle num">
+                  <span className="mt-0.5 block text-xs text-subtle num">
                     {wonShort(cheapest)}~
                   </span>
                 )}

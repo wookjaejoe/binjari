@@ -1,16 +1,24 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 
 import { DayDetail } from "@/components/DayDetail";
-import { HeatRail, MiniLegend } from "@/components/HeatRail";
+import { DowSheet, NightsSheet, dowLabel } from "@/components/FilterSheets";
+import { Legend } from "@/components/Legend";
 import { Sheet } from "@/components/Sheet";
 import { TargetPicker } from "@/components/TargetPicker";
-import { Chip, SegBar, Skeleton, Spinner, Switch } from "@/components/ui";
+import { SegBar, Skeleton, Spinner, Switch, cx } from "@/components/ui";
 import { DateMatrix } from "@/components/views/DateMatrix";
 import { DayStream } from "@/components/views/DayStream";
-import { MonthGrid } from "@/components/views/MonthGrid";
+import { HeatGrid } from "@/components/views/HeatGrid";
 import {
   buildRows,
   dateColumns,
@@ -22,23 +30,53 @@ import type { RoomScan, ZoneScan } from "@/lib/types";
 import { DEFAULT_CAMP_IDS, REFRESH_INTERVAL } from "@/lib/defaults";
 import { useCamps, useRoomScans, useZoneScans, type RoomRequest } from "@/lib/hooks";
 import { usePendingSelection } from "@/lib/usePendingSelection";
-import { useSelection, type ViewMode } from "@/store/selection";
+import { VIEWS, normalizeView } from "@/lib/views";
+import { useSelection } from "@/store/selection";
 
 /** persist된 선택은 hydration 이후에만 신뢰할 수 있다. */
 const noopSubscribe = () => () => {};
 
-const VIEWS: { value: ViewMode; label: string }[] = [
-  { value: "stream", label: "목록" },
-  { value: "month", label: "달력" },
-  { value: "matrix", label: "표" },
-];
+function FilterButton({
+  children,
+  primary,
+  onClick,
+}: {
+  children: ReactNode;
+  primary?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cx(
+        "flex min-w-0 items-center gap-1 rounded-full py-1.5 text-xs whitespace-nowrap",
+        primary
+          ? "flex-1 justify-between bg-inverse px-3 font-semibold text-inverse-fg"
+          : "shrink-0 border border-line px-3 text-muted",
+      )}
+    >
+      <span className="truncate">{children}</span>
+      <svg viewBox="0 0 10 10" className="size-2.5 shrink-0 opacity-60" aria-hidden>
+        <path
+          d="M2 3.5L5 6.5l3-3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  );
+}
 
 export default function Page() {
   const {
     nights,
-    view,
+    view: storedView,
     onlyOpen,
-    weekendOnly,
+    dows,
     autoRefresh,
     selection,
     expanded,
@@ -46,7 +84,7 @@ export default function Page() {
     setNights,
     setView,
     setOnlyOpen,
-    setWeekendOnly,
+    setDows,
     setAutoRefresh,
     requestCampAll,
     reconcile,
@@ -58,13 +96,18 @@ export default function Page() {
     () => false,
   );
   const [nonce, setNonce] = useState(0);
-  const [picking, setPicking] = useState(false);
+  const [sheet, setSheet] = useState<"target" | "nights" | "dows" | null>(null);
   const [selected, setSelected] = useState<{
     campId: string | null;
     date: string;
   } | null>(null);
   const seeded = useRef(false);
   const queryClient = useQueryClient();
+
+  const view = normalizeView(storedView);
+  useEffect(() => {
+    if (view !== storedView) setView(view);
+  }, [view, storedView, setView]);
 
   const campsQuery = useCamps();
   const camps = useMemo(() => campsQuery.data?.camps ?? [], [campsQuery.data]);
@@ -169,23 +212,22 @@ export default function Page() {
     [data, selection, expanded],
   );
   const allDates = useMemo(() => dateColumns(data), [data]);
-  const dates = useMemo(
-    () => (weekendOnly ? allDates.filter((d) => [5, 6].includes(dowIndex(d))) : allDates),
-    [allDates, weekendOnly],
+  const allSummaries = useMemo(
+    () => summarizeDays(allDates, rows, data, selection),
+    [allDates, rows, data, selection],
   );
   const summaries = useMemo(
-    () => summarizeDays(dates, rows, data, selection),
-    [dates, rows, data, selection],
+    () =>
+      dows.length
+        ? allSummaries.filter((s) => dows.includes(dowIndex(s.date)))
+        : allSummaries,
+    [allSummaries, dows],
   );
+  const dates = useMemo(() => summaries.map((s) => s.date), [summaries]);
   const openCount = summaries.filter((s) => s.openRows > 0).length;
   const matrixDates = onlyOpen
-    ? dates.filter((d) => (summaries.find((s) => s.date === d)?.openRows ?? 0) > 0)
+    ? summaries.filter((s) => s.openRows > 0).map((s) => s.date)
     : dates;
-
-  const maxStay = Math.max(
-    1,
-    ...camps.filter((c) => selection[c.id]).map((c) => c.window?.maxStay ?? 1),
-  );
 
   const targetSummary = useMemo(() => {
     const picked = Object.values(selection).filter(
@@ -228,9 +270,9 @@ export default function Page() {
     <main className="mx-auto max-w-3xl pb-16">
       <div className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur-md">
         <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-          <h1 className="text-[15px] font-semibold tracking-tight">빈자리</h1>
-          <span className="text-[11px] text-subtle">고성군 공공캠핑장</span>
-          <div className="ml-auto flex items-center gap-2 text-[11px] text-subtle">
+          <h1 className="text-lg font-semibold tracking-tight">빈자리</h1>
+          <span className="text-xs text-subtle">고성군 공공캠핑장</span>
+          <div className="ml-auto flex items-center gap-2 text-xs text-subtle">
             {scanning ? (
               <Spinner />
             ) : (
@@ -263,71 +305,39 @@ export default function Page() {
           </div>
         </div>
 
-        <div className="rail flex items-center gap-1.5 px-4 pb-2">
-          <button
-            type="button"
-            onClick={() => setPicking(true)}
-            className="flex shrink-0 items-center gap-1.5 rounded-full bg-inverse px-3 py-1.5 text-[12px] font-semibold text-inverse-fg"
-          >
+        <div className="flex items-center gap-1.5 px-4 pb-2.5">
+          <FilterButton primary onClick={() => setSheet("target")}>
             {targetSummary}
-            <svg viewBox="0 0 10 10" className="size-2.5 opacity-70" aria-hidden>
-              <path
-                d="M2 3.5L5 6.5l3-3"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-
-          <span className="mx-0.5 h-4 w-px shrink-0 bg-line-strong" />
-
-          {Array.from({ length: Math.max(maxStay, nights) }, (_, i) => i + 1).map(
-            (value) => (
-              <Chip
-                key={value}
-                active={nights === value}
-                onClick={() => setNights(value)}
-              >
-                {value}박
-              </Chip>
-            ),
-          )}
-
-          <span className="mx-0.5 h-4 w-px shrink-0 bg-line-strong" />
-
-          <Chip active={weekendOnly} onClick={() => setWeekendOnly(!weekendOnly)}>
-            금·토만
-          </Chip>
+          </FilterButton>
+          <FilterButton onClick={() => setSheet("nights")}>{nights}박</FilterButton>
+          <FilterButton onClick={() => setSheet("dows")}>
+            {dowLabel(dows)}
+          </FilterButton>
         </div>
-
-        {rows.length > 0 && (
-          <div className="px-4 pb-2.5">
-            <HeatRail
-              summaries={summaries}
-              selectedDate={selected?.date ?? null}
-              onPick={(date) => setSelected({ campId: null, date })}
-            />
-          </div>
-        )}
       </div>
 
       {errorMessage && (
-        <p className="mx-4 mt-3 rounded-lg border border-line bg-surface px-3 py-2.5 text-[12px] text-warn">
+        <p className="mx-4 mt-3 rounded-lg border border-line bg-surface px-3 py-2.5 text-xs text-warn">
           {errorMessage}
         </p>
       )}
 
       <div className="flex items-center justify-between gap-3 px-4 py-2.5">
         <SegBar value={view} options={VIEWS} onChange={setView} size="sm" />
-        <span className="text-[11.5px] text-muted num">
+        <span className="text-xs text-muted num">
           가능 <strong className="font-semibold text-fg">{openCount}</strong>일
         </span>
       </div>
 
       <div className="mx-3 overflow-hidden rounded-xl border border-line bg-surface">
+        {view === "heat" && (
+          <HeatGrid
+            summaries={allSummaries}
+            activeDows={dows}
+            selectedDate={selected?.date ?? null}
+            onPick={(date) => setSelected({ campId: null, date })}
+          />
+        )}
         {view === "stream" && (
           <DayStream
             rows={rows}
@@ -335,13 +345,6 @@ export default function Page() {
             data={data}
             selection={selection}
             nights={nights}
-            selectedDate={selected?.date ?? null}
-            onPick={(date) => setSelected({ campId: null, date })}
-          />
-        )}
-        {view === "month" && (
-          <MonthGrid
-            summaries={summaries}
             selectedDate={selected?.date ?? null}
             onPick={(date) => setSelected({ campId: null, date })}
           />
@@ -359,7 +362,7 @@ export default function Page() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <MiniLegend />
+        <Legend />
         <div className="flex items-center gap-4">
           {view === "matrix" && (
             <Switch checked={onlyOpen} onChange={setOnlyOpen}>
@@ -372,20 +375,35 @@ export default function Page() {
         </div>
       </div>
 
-      <p className="px-4 text-center text-[10.5px] leading-relaxed text-subtle">
+      <p className="px-4 text-center text-xs leading-relaxed text-subtle">
         pubcamping.kr의 공개 예약 정보를 읽어 보여줍니다.
         <br />
         실제 예약과 결제는 원 사이트에서 이뤄집니다.
       </p>
 
       <Sheet
-        open={picking}
-        onClose={() => setPicking(false)}
+        open={sheet === "target"}
+        onClose={() => setSheet(null)}
         title="조회 대상"
         subtitle="캠핑장 → 구역 → 객실 순으로 켜고 끕니다"
       >
         <TargetPicker data={pickerData} />
       </Sheet>
+
+      <NightsSheet
+        open={sheet === "nights"}
+        nights={nights}
+        camps={camps.filter((camp) => selection[camp.id])}
+        onClose={() => setSheet(null)}
+        onPick={setNights}
+      />
+
+      <DowSheet
+        open={sheet === "dows"}
+        dows={dows}
+        onClose={() => setSheet(null)}
+        onChange={setDows}
+      />
 
       <DayDetail
         selected={selected}

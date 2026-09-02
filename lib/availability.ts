@@ -1,5 +1,5 @@
 import type { ZoneSelection } from "@/store/selection";
-import type { CampProfile, RoomScan, Zone, ZoneScan } from "@/lib/types";
+import type { CampProfile, RoomScan, ZoneScan } from "@/lib/types";
 
 export type CampData = {
   camp: CampProfile;
@@ -72,18 +72,9 @@ export function buildRows(
     const picks = selection[camp.id];
     if (!picks) continue;
 
-    const zones: Zone[] = zoneScan?.zones.length
-      ? zoneScan.zones
-      : Object.keys(picks).map((no) => ({
-          no,
-          name: `구역 ${no}`,
-          total: 0,
-          size: "",
-          maxPeop: 0,
-          order: 0,
-        }));
-
-    for (const zone of zones) {
+    // 구역 메타를 모르는 채로 행을 만들면 조회 대상이 아닌 자리까지 이름을 지어내
+    // 결과에 섞인다. 스캔이 도착할 때까지 기다린다.
+    for (const zone of zoneScan?.zones ?? []) {
       const pick = picks[zone.no];
       if (!pick) continue;
 

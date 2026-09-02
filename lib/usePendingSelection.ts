@@ -17,8 +17,15 @@ export function usePendingSelection(data: CampData[]) {
 
   useEffect(() => {
     for (const { campId, scope } of pendingAll) {
-      const zones = data.find((entry) => entry.camp.id === campId)?.zoneScan?.zones;
-      if (!zones?.length) continue;
+      const entry = data.find((item) => item.camp.id === campId);
+      if (!entry?.zoneScan) continue;
+
+      const zones = entry.zoneScan.zones;
+      if (!zones.length) {
+        // 조회 가능한 구역이 없는 캠핑장 — 기다려도 채워지지 않으니 포기한다.
+        resolvePendingAll(campId, []);
+        continue;
+      }
       const compact = zones.filter((zone) => zone.total <= COMPACT_ZONE_MAX);
       const picked = scope === "compact" && compact.length ? compact : zones;
       resolvePendingAll(

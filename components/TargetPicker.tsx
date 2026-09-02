@@ -43,8 +43,13 @@ export function TargetPicker({ data }: { data: CampData[] }) {
     requestCampAll,
     setZone,
     setRoom,
+    clearAll,
   } = useSelection();
   const [query, setQuery] = useState("");
+
+  const pickedCamps = Object.values(selection).filter(
+    (zones) => Object.keys(zones).length > 0,
+  ).length;
 
   const needle = query.trim().toLowerCase();
   const visible = useMemo(
@@ -66,13 +71,22 @@ export function TargetPicker({ data }: { data: CampData[] }) {
 
   return (
     <div>
-      <div className="sticky top-0 z-10 border-b border-line bg-surface px-4 py-2.5">
+      <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-line bg-surface px-4 py-2.5">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="캠핑장 · 구역 · 객실 이름으로 찾기"
-          className="w-full rounded-md bg-surface-2 px-3 py-2 text-[13px] outline-none placeholder:text-subtle"
+          className="min-w-0 flex-1 rounded-md bg-surface-2 px-3 py-2 text-[13px] outline-none placeholder:text-subtle"
         />
+        {pickedCamps > 0 && (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="shrink-0 text-[11.5px] whitespace-nowrap text-muted active:text-fg"
+          >
+            전체 해제
+          </button>
+        )}
       </div>
 
       <ul className="pb-2">

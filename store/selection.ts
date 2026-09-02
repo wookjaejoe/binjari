@@ -3,6 +3,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { reconcileSelection } from "@/lib/selection";
+
 export type ZoneSelection = { mode: "all" } | { mode: "some"; rooms: string[] };
 
 export type ViewMode = "stream" | "month" | "matrix";
@@ -30,6 +32,11 @@ type Actions = {
   setCamp: (campId: string, zoneNos: string[], on: boolean) => void;
   requestCampAll: (campId: string, scope?: "all" | "compact") => void;
   resolvePendingAll: (campId: string, zoneNos: string[]) => void;
+  /**
+   * 저장된 선택을 현재 조회 가능한 것만 남기고 정리한다.
+   * valid에 없는 캠핑장은 제거, "unknown"은 아직 모르니 유지.
+   */
+  reconcile: (valid: Record<string, string[] | "unknown">) => void;
   setZone: (campId: string, zoneNo: string, on: boolean) => void;
   setRoom: (
     campId: string,
@@ -50,7 +57,7 @@ function prune(camp: Record<string, ZoneSelection>) {
 
 export const useSelection = create<State & Actions>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       nights: 1,
       view: "stream",
       onlyOpen: false,
@@ -90,16 +97,31 @@ export const useSelection = create<State & Actions>()(
             scope === "all" ? { ...s.expanded, [campId]: true } : s.expanded,
         })),
 
-      resolvePendingAll: (campId, zoneNos) =>
-        set((s) => ({
-          pendingAll: s.pendingAll.filter((p) => p.campId !== campId),
+      resolvePendingAll: (campId, zoneNos) => {
+        const state = get();
+        if (!state.pendingAll.some((p) => p.campId === campId)) return;
+        const pendingAll = state.pendingAll.filter((p) => p.campId !== campId);
+        if (!zoneNos.length) {
+          set({ pendingAll });
+          return;
+        }
+        set({
+          pendingAll,
           selection: {
-            ...s.selection,
+            ...state.selection,
             [campId]: Object.fromEntries(
               zoneNos.map((no) => [no, { mode: "all" } as ZoneSelection]),
             ),
           },
-        })),
+        });
+      },
+
+      reconcile: (valid) => {
+        const next = reconcileSelection(get().selection, valid);
+        // set은 빈 partial이어도 새 상태 객체를 만들어 구독자를 깨운다.
+        // 정리할 게 없으면 아예 호출하지 않아야 렌더 루프가 생기지 않는다.
+        if (next) set({ selection: next });
+      },
 
       setZone: (campId, zoneNo, on) =>
         set((s) => {

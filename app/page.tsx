@@ -18,6 +18,7 @@ import {
   type CampData,
 } from "@/lib/availability";
 import { dowIndex } from "@/lib/date";
+import type { RoomScan, ZoneScan } from "@/lib/types";
 import { DEFAULT_CAMP_IDS, REFRESH_INTERVAL } from "@/lib/defaults";
 import { useCamps, useRoomScans, useZoneScans, type RoomRequest } from "@/lib/hooks";
 import { usePendingSelection } from "@/lib/usePendingSelection";
@@ -48,6 +49,7 @@ export default function Page() {
     setWeekendOnly,
     setAutoRefresh,
     requestCampAll,
+    reconcile,
   } = useSelection();
 
   const mounted = useSyncExternalStore(
@@ -111,31 +113,56 @@ export default function Page() {
 
   const roomScans = useRoomScans(roomRequests, nights, interval, nonce);
 
-  const scanOf = (campId: string) => {
-    const index = interestIds.indexOf(campId);
-    return {
-      zoneScan: index >= 0 ? zoneScans[index]?.data : undefined,
-      roomScan: roomScans[roomRequests.findIndex((r) => r.campId === campId)]?.data,
-    };
-  };
+  // 결과를 배열 인덱스로 찾으면 요청 목록이 바뀌는 렌더에서 어긋날 수 있다.
+  // 스캔 응답이 campId를 담고 있으니 그것으로 직접 맞춘다.
+  const zoneById = useMemo(() => {
+    const map = new Map<string, ZoneScan>();
+    for (const query of zoneScans) if (query.data) map.set(query.data.campId, query.data);
+    return map;
+  }, [zoneScans]);
+
+  const roomById = useMemo(() => {
+    const map = new Map<string, RoomScan>();
+    for (const query of roomScans) if (query.data) map.set(query.data.campId, query.data);
+    return map;
+  }, [roomScans]);
 
   const data = useMemo<CampData[]>(
     () =>
-      interestIds.map((campId, index) => ({
-        camp: camps.find((camp) => camp.id === campId)!,
-        zoneScan: zoneScans[index]?.data,
-        roomScan: roomScans[roomRequests.findIndex((r) => r.campId === campId)]?.data,
-      })),
-    [interestIds, camps, zoneScans, roomScans, roomRequests],
+      camps
+        .filter((camp) => interestIds.includes(camp.id))
+        .map((camp) => ({
+          camp,
+          zoneScan: zoneById.get(camp.id),
+          roomScan: roomById.get(camp.id),
+        })),
+    [camps, interestIds, zoneById, roomById],
   );
 
   const pickerData = useMemo<CampData[]>(
-    () => camps.map((camp) => ({ camp, ...scanOf(camp.id) })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [camps, zoneScans, roomScans, roomRequests, interestIds],
+    () =>
+      camps.map((camp) => ({
+        camp,
+        zoneScan: zoneById.get(camp.id),
+        roomScan: roomById.get(camp.id),
+      })),
+    [camps, zoneById, roomById],
   );
 
   usePendingSelection(data);
+
+  // 저장된 선택은 지난 방문의 것이다. 운영이 멈춘 캠핑장이나 사라진 구역이
+  // 남아 있으면 결과에 섞이므로, 목록이 도착할 때마다 현재 기준으로 정리한다.
+  useEffect(() => {
+    if (!camps.length) return;
+    const valid: Record<string, string[] | "unknown"> = {};
+    for (const camp of camps) {
+      if (camp.status !== "open") continue;
+      const zoneScan = zoneById.get(camp.id);
+      valid[camp.id] = zoneScan ? zoneScan.zones.map((zone) => zone.no) : "unknown";
+    }
+    reconcile(valid);
+  }, [camps, zoneById, reconcile]);
 
   const rows = useMemo(
     () => buildRows(data, selection, expanded),
@@ -161,16 +188,15 @@ export default function Page() {
   );
 
   const targetSummary = useMemo(() => {
-    const campCount = Object.keys(selection).length;
-    const zoneCount = Object.values(selection).reduce(
-      (sum, zones) => sum + Object.keys(zones).length,
-      0,
+    const picked = Object.values(selection).filter(
+      (zones) => Object.keys(zones).length > 0,
     );
-    if (!campCount) return "대상 선택";
-    const roomPick = Object.values(selection)
+    if (!picked.length) return "대상 선택";
+    const zoneCount = picked.reduce((sum, zones) => sum + Object.keys(zones).length, 0);
+    const roomPick = picked
       .flatMap((zones) => Object.values(zones))
       .filter((pick) => pick.mode === "some").length;
-    return `${campCount}곳 · ${zoneCount}구역${roomPick ? ` · 객실 지정 ${roomPick}` : ""}`;
+    return `${picked.length}곳 · ${zoneCount}구역${roomPick ? ` · 객실 ${roomPick}` : ""}`;
   }, [selection]);
 
   const scanning =

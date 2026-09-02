@@ -90,6 +90,24 @@ describe("buildRows", () => {
     expect(buildRows([bundle()], {}, {})).toEqual([]);
   });
 
+  it("구역 메타를 모르면 행을 만들지 않는다 — 조회 대상 아닌 자리가 섞이면 안 된다", () => {
+    const noScan = bundle({ zoneScan: undefined });
+    const stale = { [camp.id]: { "30": { mode: "all" } as ZoneSelection } };
+    expect(buildRows([noScan], stale, {})).toEqual([]);
+  });
+
+  it("스캔에 없는 구역이 선택에 남아 있어도 행을 만들지 않는다", () => {
+    const stale = {
+      [camp.id]: {
+        "27": { mode: "all" } as ZoneSelection,
+        "999": { mode: "all" } as ZoneSelection,
+      },
+    };
+    expect(buildRows([bundle()], stale, {}).map((row) => row.label)).toEqual([
+      "카라반6인특실",
+    ]);
+  });
+
   it("펼친 구역은 선택된 객실을 행으로 펼친다", () => {
     const rows = buildRows([bundle()], all, { [`${camp.id}::27`]: true });
     expect(rows.map((row) => row.label)).toEqual([

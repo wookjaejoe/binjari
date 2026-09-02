@@ -17,9 +17,20 @@ type Props = {
   onPick: (campId: string, date: string) => void;
 };
 
+/** 좌측 라벨 폭. 구역 이름이 한 줄로 들어갈 만큼. */
+const LABEL = "6.5rem";
+/** 날짜 열 — 셀에는 잔여 수 한두 자리만 들어가므로 좁아도 된다. */
+const COL = "1.625rem";
+
 /**
- * C안 — 축을 전치한 표. 행이 날짜라 세로 스크롤로 읽히고,
- * 열끼리 직접 비교되므로 "이 날은 A는 마감인데 B는 남았다"가 즉시 보인다.
+ * 행=구역/객실, 열=날짜. 간트 차트·숙소 관리 시스템의 객실 달력과 같은 방향이다.
+ *
+ * 축을 반대로(행=날짜, 열=구역) 두면 "카라반6인특실" 같은 이름을 48px 열에
+ * 밀어넣어야 해서 잘리는데, 정작 셀에 들어가는 것은 숫자 한두 자뿐이라 폭이
+ * 낭비된다. 이름은 좌측에서 가로로 쓰고 날짜 열은 좁게 두는 편이 맞다.
+ *
+ * 열이 60개라 가로 스크롤은 불가피하다 — 이 화면의 몫은 전체 개관이 아니라
+ * 대상 간 정밀 비교이고, 개관은 히트맵이 맡는다.
  */
 export function DateMatrix({
   rows,
@@ -29,9 +40,7 @@ export function DateMatrix({
   selected,
   onPick,
 }: Props) {
-  const columns = rows.filter((row) => row.kind === "zone" || row.kind === "room");
-
-  if (!columns.length) {
+  if (!rows.length) {
     return (
       <Empty
         title="조회할 대상이 없습니다"
@@ -44,105 +53,131 @@ export function DateMatrix({
   }
 
   const today = todayISO();
-  const groups: { campName: string; columns: Row[] }[] = [];
-  for (const column of columns) {
+
+  const groups: { campName: string; rows: Row[] }[] = [];
+  for (const row of rows) {
     const last = groups.at(-1);
-    if (last && last.campName === column.campName) last.columns.push(column);
-    else groups.push({ campName: column.campName, columns: [column] });
+    if (last && last.campName === row.campName) last.rows.push(row);
+    else groups.push({ campName: row.campName, rows: [row] });
+  }
+
+  const monthSpans: { label: string; span: number }[] = [];
+  for (const date of dates) {
+    const label = `${Number(monthKey(date).slice(5))}월`;
+    const last = monthSpans.at(-1);
+    if (last && last.label === label) last.span += 1;
+    else monthSpans.push({ label, span: 1 });
   }
 
   return (
     <div className="rail">
-      <table className="w-full border-separate border-spacing-0 text-xs">
+      <table className="border-separate border-spacing-0 text-xs">
         <thead>
           <tr>
             <th
-              rowSpan={2}
-              className="sticky left-0 z-30 w-[46px] min-w-[46px] border-r border-b border-line bg-surface"
+              className="sticky top-0 left-0 z-30 border-r border-b border-line bg-surface"
+              style={{ width: LABEL, minWidth: LABEL }}
             />
-            {groups.map((group) => (
+            {monthSpans.map((month) => (
               <th
-                key={group.campName}
-                colSpan={group.columns.length}
-                className="border-r border-b border-line bg-surface px-2 py-1 text-left text-xs font-semibold whitespace-nowrap text-muted"
+                key={month.label}
+                colSpan={month.span}
+                className="sticky top-0 z-20 border-r border-b border-line bg-surface px-1.5 py-1 text-left text-2xs font-semibold whitespace-nowrap text-muted num"
               >
-                {group.campName}
+                {month.label}
               </th>
             ))}
           </tr>
           <tr>
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                title={`${column.campName} · ${column.label}`}
-                className={cx(
-                  "sticky top-0 z-20 w-12 min-w-12 border-r border-b border-line bg-surface px-1 py-1.5 align-bottom",
-                  column.kind === "room" && "text-subtle",
-                )}
-              >
-                <span className="line-clamp-2 text-center text-2xs leading-[1.25] font-medium break-all">
-                  {column.label}
-                </span>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {dates.map((date, index) => {
-            const dow = dowIndex(date);
-            const newMonth = index === 0 || monthKey(date) !== monthKey(dates[index - 1]);
-
-            return (
-              <Fragment key={date}>
-                {newMonth && (
-                  <tr>
-                    <th
-                      colSpan={columns.length + 1}
-                      className="sticky left-0 z-20 border-b border-line bg-surface-2 px-2 py-0.5 text-left text-xs font-semibold num"
-                    >
-                      {Number(date.slice(5, 7))}월
-                    </th>
-                  </tr>
-                )}
-                <tr>
-                  <th
+            <th
+              className="sticky left-0 z-30 border-r border-b border-line bg-surface px-2 py-1 text-left text-2xs font-medium text-subtle"
+              style={{ width: LABEL, minWidth: LABEL }}
+            >
+              구역 / 객실
+            </th>
+            {dates.map((date) => {
+              const dow = dowIndex(date);
+              return (
+                <th
+                  key={date}
+                  className={cx(
+                    "border-r border-b border-line bg-surface p-0 text-center num",
+                    date === today && "font-semibold",
+                  )}
+                  style={{ width: COL, minWidth: COL }}
+                >
+                  <span className="block text-2xs leading-tight">
+                    {Number(date.slice(8, 10))}
+                  </span>
+                  <span
                     className={cx(
-                      "sticky left-0 z-20 w-[46px] min-w-[46px] border-r border-b border-line bg-surface px-1 py-0 text-right font-normal num",
-                      date === today && "font-semibold",
+                      "block text-2xs leading-tight",
+                      [0, 6].includes(dow) ? "text-warn" : "text-subtle",
                     )}
                   >
-                    <span className="block text-xs">
-                      {Number(date.slice(8, 10))}
-                    </span>
-                    <span
-                      className={cx(
-                        "block text-2xs",
-                        [0, 6].includes(dow) ? "text-warn" : "text-subtle",
-                      )}
-                    >
-                      {DOW[dow]}
-                    </span>
+                    {DOW[dow]}
+                  </span>
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+
+        <tbody>
+          {groups.map((group) => (
+            <Fragment key={group.campName}>
+              <tr>
+                <th
+                  colSpan={dates.length + 1}
+                  className="border-b border-line bg-surface-2 p-0 text-left"
+                >
+                  {/* 배경 띠는 전체 폭이지만 텍스트는 따로 붙여야 한다.
+                      colSpan th에 sticky를 걸면 박스는 이미 전체 폭이라
+                      움직일 여지가 없고 텍스트만 왼쪽으로 사라진다. */}
+                  <span className="sticky left-0 inline-block px-2 py-1 text-2xs font-semibold whitespace-nowrap">
+                    {group.campName}
+                  </span>
+                </th>
+              </tr>
+
+              {group.rows.map((row) => (
+                <tr key={row.key}>
+                  <th
+                    title={`${row.campName} · ${row.label}`}
+                    className={cx(
+                      "sticky left-0 z-20 border-r border-b border-line bg-surface px-2 py-0 text-left font-normal",
+                      row.kind === "room" && "pl-4 text-subtle",
+                    )}
+                    style={{ width: LABEL, minWidth: LABEL }}
+                  >
+                    <span className="block truncate">{row.label}</span>
+                    {row.kind === "zone" && (
+                      <span className="block truncate text-2xs text-subtle num">
+                        {row.partial ? `${row.capacity}/${row.total}면 선택` : `${row.total}면`}
+                      </span>
+                    )}
                   </th>
 
-                  {columns.map((column) => {
-                    const cell = evaluate(column, date, data, selection);
+                  {dates.map((date) => {
+                    const cell = evaluate(row, date, data, selection);
                     const level =
                       cell.state === "open"
                         ? fillLevel(cell.count, Math.max(1, cell.capacity))
                         : 0;
                     const isSelected =
-                      selected?.date === date && selected?.campId === column.campId;
+                      selected?.date === date && selected?.campId === row.campId;
 
                     return (
                       <td
-                        key={column.key}
-                        title={`${column.campName} · ${column.label} · ${date}`}
+                        key={date}
+                        title={`${row.campName} · ${row.label} · ${date}`}
                         onClick={() =>
                           (cell.state === "open" || cell.state === "full") &&
-                          onPick(column.campId, date)
+                          onPick(row.campId, date)
                         }
+                        style={{ width: COL, minWidth: COL }}
                         className={cx(
-                          "h-8 w-12 min-w-12 border-r border-b border-line text-center num",
+                          "h-8 border-r border-b border-line text-center num",
                           cell.state === "open" &&
                             cx("cursor-pointer font-semibold", FILL[level]),
                           cell.state === "full" && "cursor-pointer text-subtle",
@@ -163,9 +198,9 @@ export function DateMatrix({
                     );
                   })}
                 </tr>
-              </Fragment>
-            );
-          })}
+              ))}
+            </Fragment>
+          ))}
         </tbody>
       </table>
     </div>

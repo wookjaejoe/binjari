@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic";
 
 const ORDER: Record<CampProfile["status"], number> = {
   open: 0,
-  preparing: 1,
-  unopened: 2,
+  unknown: 1,
+  preparing: 2,
+  unopened: 3,
 };
 
 export async function GET() {
@@ -26,7 +27,7 @@ export async function GET() {
             portalId: camp.portalId,
             portalLabel: "",
             window: null,
-            status: "unopened",
+            status: "unknown",
             zoneCount: 0,
             roomCount: 0,
           };

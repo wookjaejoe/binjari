@@ -9,6 +9,7 @@ import { useSelection } from "@/store/selection";
 const STATUS_LABEL = {
   preparing: "예약 준비 중",
   unopened: "예약 미오픈",
+  unknown: "조회 실패 — 새로고침해 보세요",
 } as const;
 
 function Caret({ open }: { open: boolean }) {
@@ -135,7 +136,7 @@ export function TargetPicker({ data }: { data: CampData[] }) {
                     </span>
                     <span className="mt-px block truncate text-xs text-muted num">
                       {blocked
-                        ? STATUS_LABEL[camp.status as "preparing" | "unopened"]
+                        ? STATUS_LABEL[camp.status as keyof typeof STATUS_LABEL]
                         : camp.window
                           ? `${camp.window.start.slice(5).replace("-", ".")}–${camp.window.end.slice(5).replace("-", ".")} · 최대 ${camp.window.maxStay}박 · ${camp.roomCount}면`
                           : ""}

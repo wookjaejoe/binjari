@@ -27,7 +27,14 @@ export type RoomScan = {
   generatedAt: string;
 };
 
-export type CampStatus = "open" | "preparing" | "unopened";
+/**
+ * open      예약 가능한 구역이 있다
+ * preparing 예약 기간은 있는데 열린 구역이 없다
+ * unopened  예약 기간 자체가 설정되지 않았다
+ * unknown   조회에 실패했다 — 위 셋과 반드시 구분해야 한다.
+ *           실패를 "운영 전"으로 오판하면 사용자의 선택이 지워진다.
+ */
+export type CampStatus = "open" | "preparing" | "unopened" | "unknown";
 
 export type CampProfile = {
   id: string;

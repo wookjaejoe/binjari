@@ -1,6 +1,35 @@
+import type { CampProfile, ZoneScan } from "@/lib/types";
 import type { ZoneSelection } from "@/store/selection";
 
 export type Selection = Record<string, Record<string, ZoneSelection>>;
+
+/**
+ * reconcileSelection에 넘길 "지금 조회 가능한 것" 지도를 만든다.
+ *
+ * 핵심은 **조회 실패를 운영 중단으로 오판하지 않는 것**이다. 캠핑장 상태가
+ * unknown이면(프로필 조회가 실패했다는 뜻) 판단을 보류해야 한다. 그러지 않으면
+ * 네트워크가 한 번 흔들린 사이에 사용자가 고른 캠핑장이 조용히 사라진다.
+ */
+export function buildValidMap(
+  camps: CampProfile[],
+  zoneScans: Map<string, ZoneScan>,
+): Record<string, string[] | "unknown"> {
+  const valid: Record<string, string[] | "unknown"> = {};
+
+  for (const camp of camps) {
+    if (camp.status === "unknown") {
+      valid[camp.id] = "unknown";
+      continue;
+    }
+    // preparing·unopened는 확정된 판정이므로 지도에서 빼 선택을 정리한다.
+    if (camp.status !== "open") continue;
+
+    const scan = zoneScans.get(camp.id);
+    valid[camp.id] = scan ? scan.zones.map((zone) => zone.no) : "unknown";
+  }
+
+  return valid;
+}
 
 /**
  * 저장된 선택을 지금 조회 가능한 것만 남기고 정리한다.

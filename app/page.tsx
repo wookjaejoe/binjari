@@ -28,6 +28,7 @@ import {
 import { dowIndex } from "@/lib/date";
 import type { RoomScan, ZoneScan } from "@/lib/types";
 import { DEFAULT_CAMP_IDS, REFRESH_INTERVAL } from "@/lib/defaults";
+import { buildValidMap } from "@/lib/selection";
 import { useCamps, useRoomScans, useZoneScans, type RoomRequest } from "@/lib/hooks";
 import { usePendingSelection } from "@/lib/usePendingSelection";
 import { VIEWS, normalizeView } from "@/lib/views";
@@ -198,13 +199,7 @@ export default function Page() {
   // 남아 있으면 결과에 섞이므로, 목록이 도착할 때마다 현재 기준으로 정리한다.
   useEffect(() => {
     if (!camps.length) return;
-    const valid: Record<string, string[] | "unknown"> = {};
-    for (const camp of camps) {
-      if (camp.status !== "open") continue;
-      const zoneScan = zoneById.get(camp.id);
-      valid[camp.id] = zoneScan ? zoneScan.zones.map((zone) => zone.no) : "unknown";
-    }
-    reconcile(valid);
+    reconcile(buildValidMap(camps, zoneById));
   }, [camps, zoneById, reconcile]);
 
   const rows = useMemo(

@@ -185,9 +185,18 @@ export function campProfile(campId: string): Promise<CampProfile> {
     }
 
     const probe = checkInDates(window, 1)[0] ?? window.start;
-    const day = await provider.zoneDay(portal, camp, probe, 1).catch(() => null);
-    const zones = (day?.zones ?? []).filter(isBookableZone);
+    let day;
+    try {
+      day = await provider.zoneDay(portal, camp, probe, 1);
+    } catch {
+      // 조회 실패는 "준비 중"이 아니다. 그렇게 판정하면 저장된 선택이 지워진다.
+      return { ...base, status: "unknown" as const, zoneCount: 0, roomCount: 0 };
+    }
+    if (!day) {
+      return { ...base, status: "unknown" as const, zoneCount: 0, roomCount: 0 };
+    }
 
+    const zones = day.zones.filter(isBookableZone);
     return {
       ...base,
       status: zones.length ? ("open" as const) : ("preparing" as const),

@@ -172,7 +172,7 @@ export const useSelection = create<State & Actions>()(
       clearAll: () => set({ selection: {}, pendingAll: [] }),
     }),
     {
-      name: "camping-finder-selection",
+      name: "binjari-selection",
       version: 3,
       migrate: (persisted, version): Persisted => {
         const old = (persisted ?? {}) as Partial<Persisted> & {

@@ -1,0 +1,374 @@
+"use client";
+
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+
+import { DayDetail } from "@/components/DayDetail";
+import { HeatRail, MiniLegend } from "@/components/HeatRail";
+import { Sheet } from "@/components/Sheet";
+import { TargetPicker } from "@/components/TargetPicker";
+import { Chip, SegBar, Skeleton, Spinner, Switch } from "@/components/ui";
+import { DateMatrix } from "@/components/views/DateMatrix";
+import { DayStream } from "@/components/views/DayStream";
+import { MonthGrid } from "@/components/views/MonthGrid";
+import {
+  buildRows,
+  dateColumns,
+  summarizeDays,
+  type CampData,
+} from "@/lib/availability";
+import { dowIndex } from "@/lib/date";
+import { DEFAULT_CAMP_IDS, REFRESH_INTERVAL } from "@/lib/defaults";
+import { useCamps, useRoomScans, useZoneScans, type RoomRequest } from "@/lib/hooks";
+import { usePendingSelection } from "@/lib/usePendingSelection";
+import { useSelection, type ViewMode } from "@/store/selection";
+
+/** persist된 선택은 hydration 이후에만 신뢰할 수 있다. */
+const noopSubscribe = () => () => {};
+
+const VIEWS: { value: ViewMode; label: string }[] = [
+  { value: "stream", label: "목록" },
+  { value: "month", label: "달력" },
+  { value: "matrix", label: "표" },
+];
+
+export default function Page() {
+  const {
+    nights,
+    view,
+    onlyOpen,
+    weekendOnly,
+    autoRefresh,
+    selection,
+    expanded,
+    pendingAll,
+    setNights,
+    setView,
+    setOnlyOpen,
+    setWeekendOnly,
+    setAutoRefresh,
+    requestCampAll,
+  } = useSelection();
+
+  const mounted = useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
+  const [nonce, setNonce] = useState(0);
+  const [picking, setPicking] = useState(false);
+  const [selected, setSelected] = useState<{
+    campId: string | null;
+    date: string;
+  } | null>(null);
+  const seeded = useRef(false);
+  const queryClient = useQueryClient();
+
+  const campsQuery = useCamps();
+  const camps = useMemo(() => campsQuery.data?.camps ?? [], [campsQuery.data]);
+
+  useEffect(() => {
+    if (!mounted || seeded.current || !camps.length) return;
+    seeded.current = true;
+    if (Object.keys(selection).length > 0) return;
+    for (const id of DEFAULT_CAMP_IDS) {
+      if (camps.some((camp) => camp.id === id && camp.status === "open")) {
+        requestCampAll(id, "compact");
+      }
+    }
+  }, [mounted, camps, selection, requestCampAll]);
+
+  const interestIds = useMemo(
+    () =>
+      camps
+        .filter(
+          (camp) =>
+            selection[camp.id] ||
+            expanded[camp.id] ||
+            pendingAll.some((p) => p.campId === camp.id),
+        )
+        .map((camp) => camp.id),
+    [camps, selection, expanded, pendingAll],
+  );
+
+  const interval = autoRefresh ? REFRESH_INTERVAL : false;
+  const zoneScans = useZoneScans(interestIds, nights, interval, nonce);
+
+  const roomRequests = useMemo<RoomRequest[]>(() => {
+    const requests: RoomRequest[] = [];
+    interestIds.forEach((campId, index) => {
+      const wanted = new Set<string>();
+      for (const [zoneNo, pick] of Object.entries(selection[campId] ?? {})) {
+        if (pick.mode === "some") wanted.add(zoneNo);
+      }
+      for (const zone of zoneScans[index]?.data?.zones ?? []) {
+        if (expanded[`${campId}::${zone.no}`]) wanted.add(zone.no);
+      }
+      if (wanted.size) requests.push({ campId, zones: [...wanted].sort() });
+    });
+    return requests;
+  }, [interestIds, selection, expanded, zoneScans]);
+
+  const roomScans = useRoomScans(roomRequests, nights, interval, nonce);
+
+  const scanOf = (campId: string) => {
+    const index = interestIds.indexOf(campId);
+    return {
+      zoneScan: index >= 0 ? zoneScans[index]?.data : undefined,
+      roomScan: roomScans[roomRequests.findIndex((r) => r.campId === campId)]?.data,
+    };
+  };
+
+  const data = useMemo<CampData[]>(
+    () =>
+      interestIds.map((campId, index) => ({
+        camp: camps.find((camp) => camp.id === campId)!,
+        zoneScan: zoneScans[index]?.data,
+        roomScan: roomScans[roomRequests.findIndex((r) => r.campId === campId)]?.data,
+      })),
+    [interestIds, camps, zoneScans, roomScans, roomRequests],
+  );
+
+  const pickerData = useMemo<CampData[]>(
+    () => camps.map((camp) => ({ camp, ...scanOf(camp.id) })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [camps, zoneScans, roomScans, roomRequests, interestIds],
+  );
+
+  usePendingSelection(data);
+
+  const rows = useMemo(
+    () => buildRows(data, selection, expanded),
+    [data, selection, expanded],
+  );
+  const allDates = useMemo(() => dateColumns(data), [data]);
+  const dates = useMemo(
+    () => (weekendOnly ? allDates.filter((d) => [5, 6].includes(dowIndex(d))) : allDates),
+    [allDates, weekendOnly],
+  );
+  const summaries = useMemo(
+    () => summarizeDays(dates, rows, data, selection),
+    [dates, rows, data, selection],
+  );
+  const openCount = summaries.filter((s) => s.openRows > 0).length;
+  const matrixDates = onlyOpen
+    ? dates.filter((d) => (summaries.find((s) => s.date === d)?.openRows ?? 0) > 0)
+    : dates;
+
+  const maxStay = Math.max(
+    1,
+    ...camps.filter((c) => selection[c.id]).map((c) => c.window?.maxStay ?? 1),
+  );
+
+  const targetSummary = useMemo(() => {
+    const campCount = Object.keys(selection).length;
+    const zoneCount = Object.values(selection).reduce(
+      (sum, zones) => sum + Object.keys(zones).length,
+      0,
+    );
+    if (!campCount) return "대상 선택";
+    const roomPick = Object.values(selection)
+      .flatMap((zones) => Object.values(zones))
+      .filter((pick) => pick.mode === "some").length;
+    return `${campCount}곳 · ${zoneCount}구역${roomPick ? ` · 객실 지정 ${roomPick}` : ""}`;
+  }, [selection]);
+
+  const scanning =
+    zoneScans.some((q) => q.isFetching) || roomScans.some((q) => q.isFetching);
+  const errorMessage =
+    campsQuery.error?.message ?? zoneScans.find((q) => q.error)?.error?.message;
+  const stamp = zoneScans
+    .map((q) => q.data?.generatedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
+
+  const refresh = () => {
+    setNonce((value) => value + 1);
+    queryClient.invalidateQueries({ queryKey: ["scan"] });
+  };
+
+  if (!mounted) {
+    return (
+      <main className="mx-auto max-w-3xl px-4 py-4">
+        <Skeleton className="h-8 w-24" />
+        <Skeleton className="mt-3 h-12 w-full" />
+        <Skeleton className="mt-3 h-40 w-full" />
+      </main>
+    );
+  }
+
+  return (
+    <main className="mx-auto max-w-3xl pb-16">
+      <div className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur-md">
+        <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+          <h1 className="text-[15px] font-semibold tracking-tight">빈자리</h1>
+          <span className="text-[11px] text-subtle">고성군 공공캠핑장</span>
+          <div className="ml-auto flex items-center gap-2 text-[11px] text-subtle">
+            {scanning ? (
+              <Spinner />
+            ) : (
+              stamp && (
+                <span className="num">
+                  {new Date(stamp).toLocaleTimeString("ko-KR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              )
+            )}
+            <button
+              type="button"
+              onClick={refresh}
+              aria-label="새로고침"
+              className="flex size-7 items-center justify-center rounded-md text-muted active:bg-surface-2"
+            >
+              <svg viewBox="0 0 14 14" className="size-3.5" aria-hidden>
+                <path
+                  d="M12 7a5 5 0 1 1-1.6-3.7M12 1.5V4h-2.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="rail flex items-center gap-1.5 px-4 pb-2">
+          <button
+            type="button"
+            onClick={() => setPicking(true)}
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-inverse px-3 py-1.5 text-[12px] font-semibold text-inverse-fg"
+          >
+            {targetSummary}
+            <svg viewBox="0 0 10 10" className="size-2.5 opacity-70" aria-hidden>
+              <path
+                d="M2 3.5L5 6.5l3-3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+
+          <span className="mx-0.5 h-4 w-px shrink-0 bg-line-strong" />
+
+          {Array.from({ length: Math.max(maxStay, nights) }, (_, i) => i + 1).map(
+            (value) => (
+              <Chip
+                key={value}
+                active={nights === value}
+                onClick={() => setNights(value)}
+              >
+                {value}박
+              </Chip>
+            ),
+          )}
+
+          <span className="mx-0.5 h-4 w-px shrink-0 bg-line-strong" />
+
+          <Chip active={weekendOnly} onClick={() => setWeekendOnly(!weekendOnly)}>
+            금·토만
+          </Chip>
+        </div>
+
+        {rows.length > 0 && (
+          <div className="px-4 pb-2.5">
+            <HeatRail
+              summaries={summaries}
+              selectedDate={selected?.date ?? null}
+              onPick={(date) => setSelected({ campId: null, date })}
+            />
+          </div>
+        )}
+      </div>
+
+      {errorMessage && (
+        <p className="mx-4 mt-3 rounded-lg border border-line bg-surface px-3 py-2.5 text-[12px] text-warn">
+          {errorMessage}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+        <SegBar value={view} options={VIEWS} onChange={setView} size="sm" />
+        <span className="text-[11.5px] text-muted num">
+          가능 <strong className="font-semibold text-fg">{openCount}</strong>일
+        </span>
+      </div>
+
+      <div className="mx-3 overflow-hidden rounded-xl border border-line bg-surface">
+        {view === "stream" && (
+          <DayStream
+            rows={rows}
+            dates={dates}
+            data={data}
+            selection={selection}
+            nights={nights}
+            selectedDate={selected?.date ?? null}
+            onPick={(date) => setSelected({ campId: null, date })}
+          />
+        )}
+        {view === "month" && (
+          <MonthGrid
+            summaries={summaries}
+            selectedDate={selected?.date ?? null}
+            onPick={(date) => setSelected({ campId: null, date })}
+          />
+        )}
+        {view === "matrix" && (
+          <DateMatrix
+            rows={rows}
+            dates={matrixDates}
+            data={data}
+            selection={selection}
+            selected={selected}
+            onPick={(campId, date) => setSelected({ campId, date })}
+          />
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <MiniLegend />
+        <div className="flex items-center gap-4">
+          {view === "matrix" && (
+            <Switch checked={onlyOpen} onChange={setOnlyOpen}>
+              빈 날만
+            </Switch>
+          )}
+          <Switch checked={autoRefresh} onChange={setAutoRefresh}>
+            자동 갱신
+          </Switch>
+        </div>
+      </div>
+
+      <p className="px-4 text-center text-[10.5px] leading-relaxed text-subtle">
+        pubcamping.kr의 공개 예약 정보를 읽어 보여줍니다.
+        <br />
+        실제 예약과 결제는 원 사이트에서 이뤄집니다.
+      </p>
+
+      <Sheet
+        open={picking}
+        onClose={() => setPicking(false)}
+        title="조회 대상"
+        subtitle="캠핑장 → 구역 → 객실 순으로 켜고 끕니다"
+      >
+        <TargetPicker data={pickerData} />
+      </Sheet>
+
+      <DayDetail
+        selected={selected}
+        rows={rows}
+        data={data}
+        selection={selection}
+        nights={nights}
+        onClose={() => setSelected(null)}
+      />
+    </main>
+  );
+}

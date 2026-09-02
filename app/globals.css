@@ -1,0 +1,122 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+@import "tailwindcss";
+
+/*
+ * 무채색 단일 팔레트. 브랜드 컬러 없음 — 잉크와 종이, 그 사이의 알파만 쓴다.
+ * 가용성은 색상이 아니라 농도(fill-1~4) + 글자 굵기로 표현한다.
+ * 유채색은 경고 한 가지로 제한한다.
+ */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-inverse: var(--inverse);
+  --color-inverse-fg: var(--inverse-fg);
+  --color-warn: var(--warn);
+
+  --color-fill-1: var(--fill-1);
+  --color-fill-2: var(--fill-2);
+  --color-fill-3: var(--fill-3);
+  --color-fill-4: var(--fill-4);
+
+  --font-sans:
+    var(--font-geist-sans), "Pretendard Variable", Pretendard, -apple-system,
+    BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+    monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+:root {
+  --bg: #fbfbfa;
+  --surface: #ffffff;
+  --surface-2: #f4f4f3;
+  --fg: #111112;
+  --muted: #71717a;
+  --subtle: #a3a3a8;
+  --line: #0000000f;
+  --line-strong: #00000021;
+  --inverse: #111112;
+  --inverse-fg: #fbfbfa;
+  --warn: #9a5b0b;
+
+  --fill-1: #11111214;
+  --fill-2: #11111224;
+  --fill-3: #11111233;
+  --fill-4: #11111245;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #08090b;
+    --surface: #101114;
+    --surface-2: #17181c;
+    --fg: #f7f8f8;
+    --muted: #8a8f98;
+    --subtle: #5e626b;
+    --line: #ffffff14;
+    --line-strong: #ffffff26;
+    --inverse: #f7f8f8;
+    --inverse-fg: #08090b;
+    --warn: #d9a05b;
+
+    --fill-1: #f7f8f814;
+    --fill-2: #f7f8f826;
+    --fill-3: #f7f8f838;
+    --fill-4: #f7f8f84d;
+  }
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+}
+
+/** 숫자가 콘텐츠인 화면 — 자리가 흔들리지 않게 고정폭 숫자를 쓴다. */
+@utility num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/** 예약 기간이 아닌 날 — 마감(농도 0)과 눈으로 구별되어야 한다. */
+@utility hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    var(--line-strong) 3px,
+    var(--line-strong) 4px
+  );
+}
+
+/** 가로 스크롤 영역: 스크롤바를 숨기고 스냅으로 위치를 잡는다. */
+@utility rail {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}

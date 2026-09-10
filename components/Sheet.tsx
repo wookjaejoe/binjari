@@ -45,16 +45,16 @@ export function Sheet({
         type="button"
         aria-label="닫기"
         onClick={onClose}
-        className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-fg/35 backdrop-blur-xs"
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
         className={cx(
-          "relative flex max-h-[88vh] w-full flex-col rounded-t-2xl border border-line bg-surface",
-          "sm:max-h-[80vh] sm:max-w-lg sm:rounded-2xl",
-          "animate-[sheet-in_.18s_cubic-bezier(.2,.8,.2,1)]",
+          "relative flex max-h-[88vh] w-full flex-col rounded-t-lg border border-line bg-surface elev-2",
+          "sm:max-h-[80vh] sm:max-w-lg sm:rounded-lg",
+          "sheet-in",
         )}
       >
         <header className="flex shrink-0 items-start gap-3 border-b border-line px-4 pt-3.5 pb-3">
@@ -67,7 +67,7 @@ export function Sheet({
           <button
             type="button"
             onClick={onClose}
-            className="-mt-0.5 -mr-1 flex size-7 items-center justify-center rounded-md text-muted active:bg-surface-2"
+            className="-mt-0.5 -mr-1 flex size-8 items-center justify-center rounded-sm text-muted active:bg-surface-2"
             aria-label="닫기"
           >
             <svg viewBox="0 0 14 14" className="size-3.5" aria-hidden>
@@ -92,8 +92,6 @@ export function Sheet({
           </footer>
         )}
       </div>
-
-      <style>{`@keyframes sheet-in{from{transform:translateY(12px);opacity:.6}to{transform:none;opacity:1}}`}</style>
     </div>
   );
 }

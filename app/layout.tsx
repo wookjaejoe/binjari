@@ -1,14 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
 import "./globals.css";
 
 import { Providers } from "@/app/providers";
 
-const sans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
-
 export const metadata: Metadata = {
   title: "빈자리",
-  description: "공공캠핑장 예약 가능일을 구역·객실 단위로 한 화면에서 조회합니다.",
+  description: "공공캠핑장에 지금 열려 있는 자리를 구역·객실 단위로 한 화면에서 봐요.",
 };
 
 export const viewport: Viewport = {
@@ -16,14 +13,14 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fbfbfa" },
-    { media: "(prefers-color-scheme: dark)", color: "#08090b" },
+    { media: "(prefers-color-scheme: light)", color: "#faf9f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#12110f" },
   ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className={sans.variable}>
+    <html lang="ko">
       <body>
         <Providers>{children}</Providers>
       </body>

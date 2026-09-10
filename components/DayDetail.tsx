@@ -21,7 +21,7 @@ function BookingButton({
   const { data: target, isPending, error } = useBookingTarget(campId, date, nights);
 
   if (error) {
-    return <p className="text-xs text-warn">예약 링크를 만들지 못했습니다.</p>;
+    return <p className="text-xs text-warn">예약 링크를 만들지 못했어요.</p>;
   }
 
   return (
@@ -32,9 +32,9 @@ function BookingButton({
       <button
         type="submit"
         disabled={isPending || !target}
-        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-inverse py-2.5 text-sm font-semibold text-inverse-fg disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-1.5 rounded-md bg-accent py-3 text-sm font-semibold text-accent-fg disabled:opacity-50"
       >
-        {isPending && <Spinner className="border-t-inverse-fg" />}
+        {isPending && <Spinner className="border-t-accent-fg" />}
         {campName} 예약 페이지 열기
         <svg viewBox="0 0 12 12" className="size-3 opacity-70" aria-hidden>
           <path
@@ -106,7 +106,7 @@ export function DayDetail({
               />
             ))}
             <p className="text-center text-xs text-subtle">
-              새 탭에서 이 일정이 선택된 상태로 열립니다
+              새 탭에서 이 일정이 선택된 채로 열려요
             </p>
           </div>
         ) : undefined
@@ -175,7 +175,7 @@ export function DayDetail({
                           {openRooms.map((room) => (
                             <span
                               key={room.no}
-                              className="rounded-md border border-line-strong px-1.5 py-0.5 text-xs"
+                              className="rounded-sm border border-line px-1.5 py-1 text-xs"
                             >
                               {room.name}
                             </span>

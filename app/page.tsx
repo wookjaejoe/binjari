@@ -51,10 +51,10 @@ function FilterButton({
       type="button"
       onClick={onClick}
       className={cx(
-        "flex min-w-0 items-center gap-1 rounded-full py-1.5 text-xs whitespace-nowrap",
+        "flex min-w-0 items-center gap-1 rounded-full border px-3 py-2 text-xs whitespace-nowrap",
         primary
-          ? "flex-1 justify-between bg-inverse px-3 font-semibold text-inverse-fg"
-          : "shrink-0 border border-line px-3 text-muted",
+          ? "flex-1 justify-between border-transparent bg-accent font-medium text-accent-fg"
+          : "shrink-0 border-line text-muted",
       )}
     >
       <span className="truncate">{children}</span>
@@ -265,7 +265,7 @@ export default function Page() {
     <main className="mx-auto max-w-3xl pb-16">
       <div className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur-md">
         <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-          <h1 className="text-lg font-semibold tracking-tight">빈자리</h1>
+          <h1 className="text-xl font-semibold">빈자리</h1>
           <span className="text-xs text-subtle">고성군 공공캠핑장</span>
           <div className="ml-auto flex items-center gap-2 text-xs text-subtle">
             {scanning ? (
@@ -284,7 +284,7 @@ export default function Page() {
               type="button"
               onClick={refresh}
               aria-label="새로고침"
-              className="flex size-7 items-center justify-center rounded-md text-muted active:bg-surface-2"
+              className="flex size-8 items-center justify-center rounded-sm text-muted active:bg-surface-2"
             >
               <svg viewBox="0 0 14 14" className="size-3.5" aria-hidden>
                 <path
@@ -312,8 +312,11 @@ export default function Page() {
       </div>
 
       {errorMessage && (
-        <p className="mx-4 mt-3 rounded-lg border border-line bg-surface px-3 py-2.5 text-xs text-warn">
-          {errorMessage}
+        <p
+          title={errorMessage}
+          className="mx-4 mt-3 rounded-md border border-line bg-surface px-3 py-2.5 text-xs text-warn"
+        >
+          지금은 조회가 안 돼요. 잠시 뒤 새로고침해 주세요.
         </p>
       )}
 
@@ -324,7 +327,7 @@ export default function Page() {
         </span>
       </div>
 
-      <div className="mx-3 overflow-hidden rounded-xl border border-line bg-surface">
+      <div className="mx-3 overflow-hidden rounded-md border border-line bg-surface">
         {view === "heat" && (
           <HeatGrid
             summaries={allSummaries}
@@ -371,16 +374,16 @@ export default function Page() {
       </div>
 
       <p className="px-4 text-center text-xs leading-relaxed text-subtle">
-        pubcamping.kr의 공개 예약 정보를 읽어 보여줍니다.
+        pubcamping.kr에 공개된 예약 정보를 읽어 보여줘요.
         <br />
-        실제 예약과 결제는 원 사이트에서 이뤄집니다.
+        실제 예약과 결제는 원 사이트에서 이뤄져요.
       </p>
 
       <Sheet
         open={sheet === "target"}
         onClose={() => setSheet(null)}
         title="조회 대상"
-        subtitle="캠핑장 → 구역 → 객실 순으로 켜고 끕니다"
+        subtitle="캠핑장, 구역, 객실 순으로 켜고 꺼요"
       >
         <TargetPicker data={pickerData} />
       </Sheet>

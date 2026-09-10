@@ -2,9 +2,11 @@
 @import "tailwindcss";
 
 /*
- * 무채색 단일 팔레트. 브랜드 컬러 없음 — 잉크와 종이, 그 사이의 알파만 쓴다.
- * 가용성은 색상이 아니라 농도(fill-1~4) + 글자 굵기로 표현한다.
- * 유채색은 경고 한 가지로 제한한다.
+ * 웜 중립 + 딥 그린 액센트 하나. 근거는 DESIGN.md 1부.
+ *
+ * 액센트는 크롬(선택·주요 버튼·오늘·링크)에만 쓴다. 격자에는 액센트의 저채도
+ * 틴트(fill-1~4)만 얹어 색상은 여전히 하나로 유지한다 — 색이 여럿이면 색이
+ * 데이터를 이긴다.
  */
 @theme inline {
   --color-bg: var(--bg);
@@ -15,81 +17,120 @@
   --color-subtle: var(--subtle);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
-  --color-inverse: var(--inverse);
-  --color-inverse-fg: var(--inverse-fg);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-weak: var(--accent-weak);
   --color-warn: var(--warn);
+  --color-weekend: var(--weekend);
 
   --color-fill-1: var(--fill-1);
   --color-fill-2: var(--fill-2);
   --color-fill-3: var(--fill-3);
   --color-fill-4: var(--fill-4);
 
+  /*
+   * 서체는 한 벌이다. 전에는 라틴·숫자에 Geist, 한글에 Pretendard를 써서
+   * "2곳 · 6구역" 한 문장 안에서 서체가 갈렸다. Pretendard가 tabular 숫자를
+   * 지원하므로 .num도 그대로 동작한다.
+   */
   --font-sans:
-    var(--font-geist-sans), "Pretendard Variable", Pretendard, -apple-system,
-    BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif;
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", system-ui, sans-serif;
 
   /*
-   * 타입 스케일. 임의값(text-[11.5px]) 대신 이 6단계만 쓴다.
-   * 하한은 11px — iOS HIG 최소 11pt, Material 최소 12sp 기준이며
-   * 그 아래로는 모바일에서 읽히지 않는다. 밀도는 글자 크기가 아니라
-   * 여백과 레이아웃으로 얻는다.
+   * 타입 스케일 6단. 임의값(text-[11.5px])은 쓰지 않는다.
+   * 하한 11px은 iOS HIG 최소 11pt, Material 최소 12sp 기준이다.
+   * 자간은 큰 글자에서 좁히고 작은 글자에서 넓힌다.
    */
   --text-2xs: 0.6875rem; /* 11px — 단위 접미사·격자 눈금에만 */
   --text-2xs--line-height: 1.3;
+  --text-2xs--letter-spacing: 0.01em;
   --text-xs: 0.78125rem; /* 12.5px — 캡션·메타 */
   --text-xs--line-height: 1.35;
+  --text-xs--letter-spacing: 0.005em;
   --text-sm: 0.875rem; /* 14px — 보조 본문·칩 */
   --text-sm--line-height: 1.4;
   --text-base: 0.96875rem; /* 15.5px — 본문 */
   --text-base--line-height: 1.5;
   --text-lg: 1.0625rem; /* 17px — 강조 수치 */
   --text-lg--line-height: 1.25;
+  --text-lg--letter-spacing: -0.01em;
   --text-xl: 1.3125rem; /* 21px — 화면 제목 */
   --text-xl--line-height: 1.2;
+  --text-xl--letter-spacing: -0.02em;
 
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  /* 동심 규칙: 안쪽 radius = 바깥 radius − 패딩. 트랙 8 − 패딩 2 = 안쪽 6. */
+  --radius-xs: 3px; /* 범례 스와치처럼 10px 안팎의 작은 사각형 */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  /* 층은 보더로 만든다. 그림자는 이 둘뿐이고, 다크에서는 아예 끈다. */
+  --shadow-e1: 0 1px 2px rgba(28, 26, 23, 0.06);
+  --shadow-e2:
+    0 6px 24px -8px rgba(28, 26, 23, 0.18), 0 1px 3px rgba(28, 26, 23, 0.06);
+
+  /* 인터랙션은 200ms 이하, ease-out, transform·opacity만. */
+  --dur-fast: 120ms; /* 색·배경 전환 */
+  --dur: 180ms; /* 일반 인터랙션 */
+  --dur-slow: 260ms; /* 시트 진입 */
+  --ease-out-soft: cubic-bezier(0.19, 0.91, 0.38, 1);
+  --default-transition-duration: var(--dur);
+  --default-transition-timing-function: var(--ease-out-soft);
 }
 
 :root {
-  --bg: #fbfbfa;
+  --bg: #faf9f7;
   --surface: #ffffff;
-  --surface-2: #f4f4f3;
-  --fg: #111112;
-  --muted: #71717a;
-  --subtle: #a3a3a8;
-  --line: #0000000f;
-  --line-strong: #00000021;
-  --inverse: #111112;
-  --inverse-fg: #fbfbfa;
-  --warn: #9a5b0b;
+  --surface-2: #f3f1ed;
+  --fg: #1c1a17;
+  --muted: #6e6862;
+  --subtle: #8d8780;
+  --line: #1c1a170f;
+  --line-strong: #1c1a1720;
 
-  --fill-1: #11111214;
-  --fill-2: #11111224;
-  --fill-3: #11111233;
-  --fill-4: #11111245;
+  --accent: #0f6f47;
+  --accent-fg: #ffffff;
+  --accent-weak: #0f6f4712;
+
+  --warn: #9a5b0b;
+  --weekend: #a8483f;
+
+  --fill-1: #0f6f4714;
+  --fill-2: #0f6f4726;
+  --fill-3: #0f6f473d;
+  --fill-4: #0f6f4759;
+
+  --shadow-1: var(--shadow-e1);
+  --shadow-2: var(--shadow-e2);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #08090b;
-    --surface: #101114;
-    --surface-2: #17181c;
-    --fg: #f7f8f8;
-    --muted: #8a8f98;
-    --subtle: #5e626b;
-    --line: #ffffff14;
-    --line-strong: #ffffff26;
-    --inverse: #f7f8f8;
-    --inverse-fg: #08090b;
-    --warn: #d9a05b;
+    --bg: #12110f;
+    --surface: #1a1815;
+    --surface-2: #232019;
+    --fg: #f4f1ec;
+    --muted: #9e978e;
+    --subtle: #6d675f;
+    --line: #f4f1ec14;
+    --line-strong: #f4f1ec26;
 
-    --fill-1: #f7f8f814;
-    --fill-2: #f7f8f826;
-    --fill-3: #f7f8f838;
-    --fill-4: #f7f8f84d;
+    --accent: #55c78d;
+    --accent-fg: #0a1a12;
+    --accent-weak: #55c78d16;
+
+    --warn: #d9a05b;
+    --weekend: #d98a80;
+
+    --fill-1: #55c78d14;
+    --fill-2: #55c78d26;
+    --fill-3: #55c78d3d;
+    --fill-4: #55c78d59;
+
+    /* 어두운 배경 위의 어두운 그림자는 보이지 않거나 탁해진다. 층은 표면 밝기로. */
+    --shadow-1: none;
+    --shadow-2: none;
   }
 }
 
@@ -105,6 +146,9 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans);
+  /* 이걸 두지 않으면 클래스가 없는 요소가 브라우저 기본 16px로 떨어진다 —
+     스케일에 없는 값이다. rem은 html 기준이라 유틸리티 크기는 그대로다. */
+  font-size: var(--text-base);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overscroll-behavior-y: none;
@@ -132,7 +176,56 @@ body {
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 .rail::-webkit-scrollbar {
   display: none;
+}
+
+/** 층 — DESIGN.md 1.3. 이 둘 말고 다른 그림자는 쓰지 않는다. */
+@utility elev-1 {
+  box-shadow: var(--shadow-1);
+}
+@utility elev-2 {
+  box-shadow: var(--shadow-2);
+}
+
+/** 바텀 시트 진입. keyframes는 아래에 있고 reduced-motion에서 페이드로 바뀐다. */
+@utility sheet-in {
+  animation: sheet-in var(--dur-slow) var(--ease-out-soft);
+}
+
+/**
+ * 시트 진입. transform·opacity만 움직인다.
+ * 위치를 바꾸는 애니메이션이라 reduced-motion에서는 페이드로 대체한다.
+ */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes sheet-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

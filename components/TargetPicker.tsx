@@ -9,7 +9,7 @@ import { useSelection } from "@/store/selection";
 const STATUS_LABEL = {
   preparing: "예약 준비 중",
   unopened: "예약 미오픈",
-  unknown: "조회 실패 — 새로고침해 보세요",
+  unknown: "조회 실패",
 } as const;
 
 function Caret({ open }: { open: boolean }) {
@@ -105,7 +105,7 @@ export function TargetPicker({ data }: { data: CampData[] }) {
             <li key={camp.id} className="border-b border-line last:border-0">
               <div className="flex items-center gap-2.5 px-4 py-2.5">
                 {blocked ? (
-                  <span className="size-[18px] shrink-0 rounded-[5px] border border-line" />
+                  <span className="size-5 shrink-0 rounded-sm border border-line" />
                 ) : (
                   <Check
                     state={campState}
@@ -148,7 +148,7 @@ export function TargetPicker({ data }: { data: CampData[] }) {
 
               {overStay && (
                 <p className="px-4 pb-2.5 text-xs text-warn">
-                  {`최대 ${camp.window?.maxStay}박까지만 예약할 수 있어 ${nights}박 결과가 없습니다.`}
+                  {`최대 ${camp.window?.maxStay}박까지만 예약할 수 있어 ${nights}박 결과가 없어요.`}
                 </p>
               )}
 
@@ -203,19 +203,19 @@ export function TargetPicker({ data }: { data: CampData[] }) {
                         {zoneOpen && (
                           <ul className="pb-1">
                             {!roomScan && (
-                              <li className="flex items-center gap-2 py-1.5 pl-[70px] text-xs text-muted">
+                              <li className="flex items-center gap-2 py-1.5 pl-16 text-xs text-muted">
                                 <Spinner /> 객실 조회 중
                               </li>
                             )}
                             {roomScan && noCatalog && (
-                              <li className="py-1.5 pr-4 pl-[70px] text-xs leading-relaxed text-muted">
-                                조회 기간 내내 마감이라 개별 객실을 확인할 수 없습니다.
+                              <li className="py-1.5 pr-4 pl-16 text-xs leading-relaxed text-muted">
+                                조회 기간 내내 마감이라 개별 객실은 확인할 수 없어요.
                               </li>
                             )}
                             {catalog.map((room) => (
                               <li
                                 key={room.no}
-                                className="flex items-center gap-2.5 py-1.5 pr-4 pl-[62px]"
+                                className="flex items-center gap-2.5 py-1.5 pr-4 pl-16"
                               >
                                 <Check
                                   state={chosen.has(room.no) ? "on" : "off"}
@@ -250,7 +250,7 @@ export function TargetPicker({ data }: { data: CampData[] }) {
 
         {!visible.length && (
           <li className="px-4 py-10 text-center text-sm text-muted">
-            검색 결과가 없습니다
+            검색 결과가 없어요
           </li>
         )}
       </ul>

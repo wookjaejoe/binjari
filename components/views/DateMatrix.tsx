@@ -3,9 +3,9 @@
 import { Fragment } from "react";
 
 import { FILL, Empty, cx } from "@/components/ui";
-import { evaluate, type CampData, type Row } from "@/lib/availability";
+import { evaluate, type Cell, type CampData, type Row } from "@/lib/availability";
 import { DOW, dowIndex, monthKey, todayISO } from "@/lib/date";
-import { fillLevel } from "@/lib/policy";
+import { fillScale } from "@/lib/policy";
 import type { ZoneSelection } from "@/store/selection";
 
 type Props = {
@@ -43,16 +43,32 @@ export function DateMatrix({
   if (!rows.length) {
     return (
       <Empty
-        title="조회할 대상이 없습니다"
-        hint="위의 대상 버튼을 눌러 캠핑장·구역·객실을 선택하세요."
+        title="조회할 대상이 없어요"
+        hint="위 대상 버튼에서 캠핑장과 구역을 골라 주세요."
       />
     );
   }
   if (!dates.length) {
-    return <Empty title="조회할 날짜가 없습니다" />;
+    return <Empty title="조회할 날짜가 없어요" />;
   }
 
   const today = todayISO();
+
+  // 셀을 먼저 전부 구한다. 농도 스케일이 화면 전체의 분포를 알아야 하고,
+  // 두 번 평가하지 않기 위해서다.
+  const cells = new Map<string, Cell>();
+  for (const row of rows) {
+    for (const date of dates) {
+      cells.set(`${row.key}|${date}`, evaluate(row, date, data, selection));
+    }
+  }
+
+  // 행마다 면 수가 82면부터 1면까지 벌어지므로 잔여 수 자체가 아니라 잔여 비율을
+  // 비교한다. 그렇지 않으면 큰 구역이 늘 진하고 단일 객실은 늘 흐리다.
+  const ratio = (cell: Cell) => cell.count / Math.max(1, cell.capacity);
+  const shade = fillScale(
+    [...cells.values()].filter((cell) => cell.state === "open").map(ratio),
+  );
 
   const groups: { campName: string; rows: Row[] }[] = [];
   for (const row of rows) {
@@ -112,7 +128,7 @@ export function DateMatrix({
                   <span
                     className={cx(
                       "block text-2xs leading-tight",
-                      [0, 6].includes(dow) ? "text-warn" : "text-subtle",
+                      [0, 6].includes(dow) ? "text-weekend" : "text-subtle",
                     )}
                   >
                     {DOW[dow]}
@@ -159,11 +175,8 @@ export function DateMatrix({
                   </th>
 
                   {dates.map((date) => {
-                    const cell = evaluate(row, date, data, selection);
-                    const level =
-                      cell.state === "open"
-                        ? fillLevel(cell.count, Math.max(1, cell.capacity))
-                        : 0;
+                    const cell = cells.get(`${row.key}|${date}`)!;
+                    const level = cell.state === "open" ? shade(ratio(cell)) : 0;
                     const isSelected =
                       selected?.date === date && selected?.campId === row.campId;
 
@@ -182,7 +195,7 @@ export function DateMatrix({
                             cx("cursor-pointer font-semibold", FILL[level]),
                           cell.state === "full" && "cursor-pointer text-subtle",
                           cell.state === "outside" && "hatch opacity-45",
-                          isSelected && "ring-[1.5px] ring-fg ring-inset",
+                          isSelected && "ring-2 ring-accent ring-inset",
                         )}
                       >
                         {cell.state === "open"

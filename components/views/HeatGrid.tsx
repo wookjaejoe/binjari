@@ -5,7 +5,7 @@ import { Fragment } from "react";
 import { FILL, Empty, cx } from "@/components/ui";
 import type { DaySummary } from "@/lib/availability";
 import { DOW, dowIndex, todayISO } from "@/lib/date";
-import { fillLevel } from "@/lib/policy";
+import { fillScale } from "@/lib/policy";
 
 type Props = {
   /** 요일 필터를 적용하지 않은 전 기간. 격자를 끊김 없이 채우려면 전부 필요하다. */
@@ -35,13 +35,18 @@ export function HeatGrid({ summaries, activeDows, selectedDate, onPick }: Props)
   if (!summaries.length) {
     return (
       <Empty
-        title="조회할 대상이 없습니다"
-        hint="위의 대상 버튼을 눌러 캠핑장·구역·객실을 선택하세요."
+        title="조회할 대상이 없어요"
+        hint="위 대상 버튼에서 캠핑장과 구역을 골라 주세요."
       />
     );
   }
 
   const today = todayISO();
+
+  // 농도는 지금 격자에 놓인 값 전체의 분포로 정한다. 요일 필터로 흐려진 날도
+  // 화면에 남아 있으므로 스케일에 포함한다 — 그래야 필터를 켰다 껐다 해도
+  // 같은 날의 농도가 흔들리지 않는다.
+  const shade = fillScale(summaries.map((summary) => summary.openUnits));
 
   const weeks: (DaySummary | null)[][] = [];
   for (const summary of summaries) {
@@ -75,8 +80,8 @@ export function HeatGrid({ summaries, activeDows, selectedDate, onPick }: Props)
             key={label}
             className={cx(
               "pb-0.5 text-center text-2xs",
-              dow === 0 || dow === 6 ? "text-warn" : "text-subtle",
-              activeDows.length > 0 && !activeDows.includes(dow) && "opacity-35",
+              dow === 0 || dow === 6 ? "text-weekend" : "text-subtle",
+              activeDows.length > 0 && !activeDows.includes(dow) && "opacity-40",
             )}
           >
             {label}
@@ -96,10 +101,8 @@ export function HeatGrid({ summaries, activeDows, selectedDate, onPick }: Props)
 
               const muted = activeDows.length > 0 && !activeDows.includes(dow);
               const inactive = summary.activeRows === 0;
-              const open = summary.openRows > 0;
-              const level = open
-                ? fillLevel(summary.openRows, summary.activeRows)
-                : 0;
+              const open = summary.openUnits > 0;
+              const level = shade(summary.openUnits);
 
               return (
                 <button
@@ -116,22 +119,21 @@ export function HeatGrid({ summaries, activeDows, selectedDate, onPick }: Props)
                         : "마감"
                   }`}
                   className={cx(
-                    "flex flex-col items-center justify-center gap-px rounded-md border",
+                    "flex flex-col items-center justify-center gap-px rounded-sm border transition-colors",
                     inactive
                       ? "hatch cursor-default border-line opacity-40"
                       : open
                         ? cx("border-transparent", FILL[level])
                         : "border-line",
-                    muted && "opacity-30",
+                    muted && "opacity-40",
                     selectedDate === summary.date &&
-                      "ring-[1.5px] ring-fg ring-offset-1 ring-offset-bg",
+                      "ring-2 ring-accent ring-offset-1 ring-offset-bg",
                   )}
                 >
                   <span
                     className={cx(
                       "text-xs leading-none num",
-                      summary.date === today &&
-                        "underline decoration-2 underline-offset-2",
+                      summary.date === today && "text-accent",
                       open ? "font-semibold" : "text-subtle",
                     )}
                   >
@@ -150,8 +152,8 @@ export function HeatGrid({ summaries, activeDows, selectedDate, onPick }: Props)
       </div>
 
       <p className="mt-3 text-2xs leading-relaxed text-subtle">
-        칸의 위 숫자는 날짜, 아래는 열려 있는 자리 수입니다. 농도는 선택한 대상 중
-        몇 곳이 열려 있는지를 나타냅니다.
+        위는 날짜, 아래는 열려 있는 자리 수예요. 농도는 조회 기간 안에서의 상대적인
+        양이라, 진할수록 여유로운 날이에요.
       </p>
     </div>
   );

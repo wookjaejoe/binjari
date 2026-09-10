@@ -41,8 +41,8 @@ export function DayStream({
   if (!zoneRows.length) {
     return (
       <Empty
-        title="조회할 대상이 없습니다"
-        hint="위의 대상 버튼을 눌러 캠핑장·구역·객실을 선택하세요."
+        title="조회할 대상이 없어요"
+        hint="위 대상 버튼에서 캠핑장과 구역을 골라 주세요."
       />
     );
   }
@@ -64,8 +64,8 @@ export function DayStream({
   if (!days.length) {
     return (
       <Empty
-        title={`${nights}박으로 빈자리가 없습니다`}
-        hint="숙박일수를 줄이거나 대상을 더 선택해 보세요. 취소가 나오면 여기에 바로 올라옵니다."
+        title={`${nights}박으로는 빈자리가 없어요`}
+        hint="숙박일수를 줄이거나 대상을 늘려 보세요. 취소가 나오면 여기에 바로 올라와요."
       />
     );
   }
@@ -94,14 +94,14 @@ export function DayStream({
                 selectedDate === date && "bg-surface-2",
               )}
             >
-              <span className="w-[46px] shrink-0">
+              <span className="w-12 shrink-0">
                 <span className="block text-lg leading-none font-semibold num">
                   {Number(date.slice(5, 7))}/{Number(date.slice(8, 10))}
                 </span>
                 <span
                   className={cx(
                     "mt-1 block text-xs",
-                    [0, 6].includes(dow) ? "text-warn" : "text-muted",
+                    [0, 6].includes(dow) ? "text-weekend" : "text-muted",
                   )}
                 >
                   {DOW[dow]}
@@ -118,7 +118,7 @@ export function DayStream({
                 {shown.map(({ row, cell }) => (
                   <span
                     key={row.key}
-                    className="flex max-w-full items-center gap-1 rounded-md border border-line bg-bg px-1.5 py-[3px] text-xs"
+                    className="flex max-w-full items-center gap-1 rounded-sm border border-line bg-bg px-1.5 py-1 text-xs"
                   >
                     <span className="shrink-0 text-subtle">
                       {shortCamp(row.campName)}

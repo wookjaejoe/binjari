@@ -1,6 +1,6 @@
 "use client";
 
-import { Empty, cx, wonShort } from "@/components/ui";
+import { cx, wonShort } from "@/components/ui";
 import { evaluate, type CampData, type Row } from "@/lib/availability";
 import { DOW, dowIndex, shiftISO } from "@/lib/date";
 import type { ZoneSelection } from "@/store/selection";
@@ -38,14 +38,6 @@ export function DayStream({
 }: Props) {
   const zoneRows = rows.filter((row) => row.kind === "zone");
 
-  if (!zoneRows.length) {
-    return (
-      <Empty
-        title="고른 대상이 없어요"
-      />
-    );
-  }
-
   const days = dates
     .map((date) => ({
       date,
@@ -59,15 +51,6 @@ export function DayStream({
         ),
     }))
     .filter((day) => day.hits.length > 0);
-
-  if (!days.length) {
-    return (
-      <Empty
-        title={`${nights}박으로는 빈자리가 없어요`}
-        hint="숙박일수를 줄이거나 대상을 늘려 봐요."
-      />
-    );
-  }
 
   return (
     <ol className="divide-y divide-line">

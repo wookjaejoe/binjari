@@ -214,19 +214,10 @@ export function Skeleton({ className }: { className?: string }) {
   return <div className={cx("animate-pulse rounded-sm bg-surface-2", className)} />;
 }
 
-export function Empty({
-  title,
-  hint,
-  action,
-}: {
-  title: string;
-  hint?: string;
-  action?: ReactNode;
-}) {
+export function Empty({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-2 px-6 py-14 text-center">
       <p className="text-base font-medium">{title}</p>
-      {hint && <p className="max-w-56 text-xs leading-relaxed text-muted">{hint}</p>}
       {action}
     </div>
   );

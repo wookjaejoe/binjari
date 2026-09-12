@@ -2,7 +2,7 @@
 
 import { Fragment } from "react";
 
-import { FILL, Empty, cx } from "@/components/ui";
+import { FILL, cx } from "@/components/ui";
 import type { DaySummary } from "@/lib/availability";
 import { DOW, dowIndex, formatShort, todayISO } from "@/lib/date";
 import { fillScale } from "@/lib/policy";
@@ -32,14 +32,6 @@ const GUTTER = "1.75rem";
  * 이 화면의 핵심이고, 월별로 잘라 빈칸을 넣으면 그게 깨진다.
  */
 export function HeatGrid({ summaries, activeDows, selectedDate, onPick }: Props) {
-  if (!summaries.length) {
-    return (
-      <Empty
-        title="고른 대상이 없어요"
-      />
-    );
-  }
-
   const today = todayISO();
 
   // 농도는 지금 격자에 놓인 값 전체의 분포로 정한다. 요일 필터로 흐려진 날도

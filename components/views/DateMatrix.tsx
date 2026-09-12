@@ -2,7 +2,7 @@
 
 import { Fragment } from "react";
 
-import { FILL, Empty, cx } from "@/components/ui";
+import { FILL, cx } from "@/components/ui";
 import { evaluate, type Cell, type CampData, type Row } from "@/lib/availability";
 import { DOW, dowIndex, formatShort, monthKey, todayISO } from "@/lib/date";
 import { fillScale } from "@/lib/policy";
@@ -40,16 +40,6 @@ export function DateMatrix({
   selected,
   onPick,
 }: Props) {
-  if (!rows.length) {
-    return (
-      <Empty
-        title="고른 대상이 없어요"
-      />
-    );
-  }
-  if (!dates.length) {
-    return <Empty title="조회할 날짜가 없어요" />;
-  }
 
   const today = todayISO();
 

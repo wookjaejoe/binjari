@@ -16,7 +16,7 @@ import { DowSheet, NightsSheet, dowLabel } from "@/components/FilterSheets";
 import { Legend } from "@/components/Legend";
 import { Sheet } from "@/components/Sheet";
 import { TargetPicker } from "@/components/TargetPicker";
-import { SegBar, Skeleton, Spinner, Switch, cx } from "@/components/ui";
+import { Empty, SegBar, Skeleton, Spinner, Switch, cx } from "@/components/ui";
 import { DateMatrix } from "@/components/views/DateMatrix";
 import { DayStream } from "@/components/views/DayStream";
 import { HeatGrid } from "@/components/views/HeatGrid";
@@ -37,6 +37,15 @@ import { useSelection } from "@/store/selection";
 
 /** persist된 선택은 hydration 이후에만 신뢰할 수 있다. */
 const noopSubscribe = () => () => {};
+
+type SheetKind = "target" | "nights" | "dows";
+
+type EmptyState = {
+  title: string;
+  /** [버튼 라벨, 여는 시트] */
+  action?: [string, SheetKind];
+  loading?: boolean;
+};
 
 function FilterButton({
   children,
@@ -98,7 +107,7 @@ export default function Page() {
     () => false,
   );
   const [nonce, setNonce] = useState(0);
-  const [sheet, setSheet] = useState<"target" | "nights" | "dows" | null>(null);
+  const [sheet, setSheet] = useState<SheetKind | null>(null);
   const [selected, setSelected] = useState<{
     campId: string | null;
     date: string;
@@ -225,6 +234,50 @@ export default function Page() {
     ? summaries.filter((s) => s.openRows > 0).map((s) => s.date)
     : dates;
 
+  // 빈 상태는 뷰가 아니라 여기서 판단한다. 무엇 때문에 비었는지(대상·숙박일수·
+  // 요일)는 조건을 다 아는 이 층만 알고, 갈 곳이 있으면 문장 대신 버튼을 준다.
+  const pending = zoneScans.some((q) => q.isPending);
+  const empty = ((): EmptyState | null => {
+    if (!rows.length) {
+      if (pending) return { title: "조회하고 있어요", loading: true };
+      return { title: "고른 대상이 없어요", action: ["대상 고르기", "target"] };
+    }
+    if (!allDates.length) {
+      if (data.every((d) => d.zoneScan?.tooManyNights)) {
+        const limit = Math.max(1, ...data.map((d) => d.camp.window?.maxStay ?? 1));
+        return {
+          title: `${limit}박까지만 예약할 수 있어요`,
+          action: ["숙박일수 줄이기", "nights"],
+        };
+      }
+      if (pending) return { title: "조회하고 있어요", loading: true };
+      return { title: "조회할 날짜가 없어요" };
+    }
+    if (!dates.length) {
+      return {
+        title: "고른 요일에 체크인할 수 있는 날이 없어요",
+        action: ["요일 바꾸기", "dows"],
+      };
+    }
+    const wantsOpen = view === "stream" || (view === "matrix" && onlyOpen);
+    if (wantsOpen && openCount === 0) {
+      if (nights > 1) {
+        return {
+          title: `${nights}박으로는 빈자리가 없어요`,
+          action: ["숙박일수 줄이기", "nights"],
+        };
+      }
+      if (dows.length) {
+        return {
+          title: "고른 요일에는 빈자리가 없어요",
+          action: ["요일 넓히기", "dows"],
+        };
+      }
+      return { title: "조회 기간에 빈자리가 없어요", action: ["대상 늘리기", "target"] };
+    }
+    return null;
+  })();
+
   const targetSummary = useMemo(() => {
     const picked = Object.values(selection).filter(
       (zones) => Object.keys(zones).length > 0,
@@ -338,7 +391,27 @@ export default function Page() {
       </div>
 
       <div className="mx-3 overflow-hidden rounded-md border border-line bg-surface">
-        {view === "heat" && (
+        {empty && (
+          <Empty
+            title={empty.title}
+            action={
+              empty.loading ? (
+                <Spinner />
+              ) : (
+                empty.action && (
+                  <button
+                    type="button"
+                    onClick={() => setSheet(empty.action![1])}
+                    className="mt-2 rounded-full border border-line px-4 py-2 text-sm font-medium text-fg active:bg-surface-2"
+                  >
+                    {empty.action[0]}
+                  </button>
+                )
+              )
+            }
+          />
+        )}
+        {!empty && view === "heat" && (
           <HeatGrid
             summaries={allSummaries}
             activeDows={dows}
@@ -346,7 +419,7 @@ export default function Page() {
             onPick={(date) => setSelected({ campId: null, date })}
           />
         )}
-        {view === "stream" && (
+        {!empty && view === "stream" && (
           <DayStream
             rows={rows}
             dates={dates}
@@ -357,7 +430,7 @@ export default function Page() {
             onPick={(date) => setSelected({ campId: null, date })}
           />
         )}
-        {view === "matrix" && (
+        {!empty && view === "matrix" && (
           <DateMatrix
             rows={rows}
             dates={matrixDates}

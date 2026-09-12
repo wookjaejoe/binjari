@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { DayDetail } from "@/components/DayDetail";
+import { Highlight } from "@/components/Highlight";
 import { DowSheet, NightsSheet, dowLabel } from "@/components/FilterSheets";
 import { Legend } from "@/components/Legend";
 import { Sheet } from "@/components/Sheet";
@@ -53,7 +54,7 @@ function FilterButton({
       className={cx(
         "flex min-w-0 items-center gap-1 rounded-full border px-3 py-2 text-xs whitespace-nowrap",
         primary
-          ? "flex-1 justify-between border-transparent bg-accent font-medium text-accent-fg"
+          ? "flex-1 justify-between border-line bg-surface font-medium text-fg"
           : "shrink-0 border-line text-muted",
       )}
     >
@@ -313,14 +314,23 @@ export default function Page() {
 
       {errorMessage && (
         <p
-          title={errorMessage}
           className="mx-4 mt-3 rounded-md border border-line bg-surface px-3 py-2.5 text-xs text-warn"
         >
-          지금은 조회가 안 돼요. 잠시 뒤 새로고침해 주세요.
+          지금은 조회가 안 돼요. 잠시 뒤 다시 해 볼게요.
         </p>
       )}
 
-      <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+      <Highlight
+        summaries={allSummaries}
+        rows={rows}
+        data={data}
+        selection={selection}
+        activeDows={dows}
+        nights={nights}
+        onPick={(date) => setSelected({ campId: null, date })}
+      />
+
+      <div className="mt-6 flex items-center justify-between gap-3 px-4 py-2.5">
         <SegBar value={view} options={VIEWS} onChange={setView} size="sm" />
         <span className="text-xs text-muted num">
           가능 <strong className="font-semibold text-fg">{openCount}</strong>일
@@ -374,16 +384,13 @@ export default function Page() {
       </div>
 
       <p className="px-4 text-center text-xs leading-relaxed text-subtle">
-        pubcamping.kr에 공개된 예약 정보를 읽어 보여줘요.
-        <br />
-        실제 예약과 결제는 원 사이트에서 이뤄져요.
+        pubcamping.kr의 공개 정보예요. 예약과 결제는 원 사이트에서 해요.
       </p>
 
       <Sheet
         open={sheet === "target"}
         onClose={() => setSheet(null)}
         title="조회 대상"
-        subtitle="캠핑장, 구역, 객실 순으로 켜고 꺼요"
       >
         <TargetPicker data={pickerData} />
       </Sheet>

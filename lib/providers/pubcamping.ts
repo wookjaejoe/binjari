@@ -50,12 +50,16 @@ async function getText(url: string) {
 
 /** 예약 API가 요구하는 내부 캠핑장 번호. 캠핑장 첫 페이지에만 노출된다. */
 function campNo(portal: Portal, camp: CampRef): Promise<string> {
-  return memo(`pubcamping:campNo:${portal.host}:${camp.slug}`, 12 * HOUR, async () => {
-    const html = await getText(`${campBase(portal, camp)}/index`);
-    const found = html.match(/campSeach\.params\.campNo\s*=\s*"(\d+)"/);
-    if (!found) throw new Error(`campNo를 찾지 못했습니다: ${camp.slug}`);
-    return found[1];
-  });
+  return memo(
+    `pubcamping:campNo:${portal.host}:${camp.slug}`,
+    12 * HOUR,
+    async () => {
+      const html = await getText(`${campBase(portal, camp)}/index`);
+      const found = html.match(/campSeach\.params\.campNo\s*=\s*"(\d+)"/);
+      if (!found) throw new Error(`campNo를 찾지 못했습니다: ${camp.slug}`);
+      return found[1];
+    },
+  );
 }
 
 function num(value: unknown): number {
@@ -106,17 +110,19 @@ export const pubcamping: CampProvider = {
     return {
       start: compactToISO(str(data.room_start_day)),
       end: compactToISO(str(data.room_end_day)),
-      minStay: Math.max(1, num(data.min_stay_limit) || 1),
       maxStay: Math.max(1, num(data.max_stay_limit) || 1),
     } satisfies BookingWindow;
   },
 
   async zoneDay(portal, camp, date, nights) {
-    const res = await postJson(`${campBase(portal, camp)}/productSearchJson.do`, {
-      stay_cnt: nights,
-      check_in: isoToCompact(date),
-      camp_no: await campNo(portal, camp),
-    });
+    const res = await postJson(
+      `${campBase(portal, camp)}/productSearchJson.do`,
+      {
+        stay_cnt: nights,
+        check_in: isoToCompact(date),
+        camp_no: await campNo(portal, camp),
+      },
+    );
     if (res.RESULT_CODE !== "SUCCESS") return null;
 
     const zones: Zone[] = [];
@@ -125,6 +131,9 @@ export const pubcamping: CampProvider = {
 
     for (const raw of (res.RESULT_DATA ?? []) as Json[]) {
       const no = str(raw.ROOM_AREA_NO);
+      // MASTER_IMAGE 는 "/2024/0404/….jpg" 꼴의 경로다. upload/cont 가 본문용 크기이고,
+      // 더 작은 썸네일이 필요하면 next/image 가 이걸 줄인다.
+      const image = str(raw.MASTER_IMAGE);
       zones.push({
         no,
         name: str(raw.ROOM_AREA_NAME),
@@ -132,6 +141,8 @@ export const pubcamping: CampProvider = {
         size: str(raw.SIZES),
         maxPeop: num(raw.MAX_PEOP_CNT),
         order: num(raw.ORDER_LEVEL),
+        photo: image ? `https://${portal.host}/upload/cont${image}` : null,
+        ground: str(raw.GROUNDS),
       });
       counts[no] = num(raw.ROOM_CNT);
       amounts[no] = raw.MIN_USE_AMT == null ? null : num(raw.MIN_USE_AMT);
@@ -140,12 +151,15 @@ export const pubcamping: CampProvider = {
   },
 
   async roomDay(portal, camp, zoneNo, date, nights) {
-    const res = await postJson(`${campBase(portal, camp)}/productSelectJson.do`, {
-      stay_cnt: nights,
-      check_in: isoToCompact(date),
-      check_out: isoToCompact(shiftISO(date, nights)),
-      room_area_no: zoneNo,
-    });
+    const res = await postJson(
+      `${campBase(portal, camp)}/productSelectJson.do`,
+      {
+        stay_cnt: nights,
+        check_in: isoToCompact(date),
+        check_out: isoToCompact(shiftISO(date, nights)),
+        room_area_no: zoneNo,
+      },
+    );
     if (res.RESULT_CODE !== "SUCCESS") return null;
 
     const rooms: Room[] = [];

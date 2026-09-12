@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { checkInDates } from "@/lib/scan";
 
-const window = { start: "2026-09-02", end: "2026-10-31", minStay: 1, maxStay: 7 };
+const window = { start: "2026-09-02", end: "2026-10-31", maxStay: 7 };
 
 describe("checkInDates", () => {
   beforeEach(() => {
@@ -25,8 +25,6 @@ describe("checkInDates", () => {
   });
 
   it("예약 기간이 이미 지났으면 빈 배열이다", () => {
-    expect(
-      checkInDates({ ...window, end: "2026-09-05" }, 1),
-    ).toEqual([]);
+    expect(checkInDates({ ...window, end: "2026-09-05" }, 1)).toEqual([]);
   });
 });

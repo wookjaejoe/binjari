@@ -20,7 +20,7 @@ export function Legend() {
       </span>
       <span className="flex items-center gap-1">
         <span className="hatch size-2.5 rounded-xs opacity-60" />
-        기간 아님
+        예약 기간 아님
       </span>
     </div>
   );

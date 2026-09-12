@@ -32,7 +32,6 @@ export function NightsSheet({
       open={open}
       onClose={onClose}
       title="숙박일수"
-      subtitle="캠핑장마다 최대 숙박일수가 달라요"
     >
       <ul className="p-2">
         {Array.from({ length: Math.max(limit, nights) }, (_, i) => i + 1).map(
@@ -118,7 +117,6 @@ export function DowSheet({
       open={open}
       onClose={onClose}
       title="체크인 요일"
-      subtitle="고른 요일에 시작하는 일정만 봐요"
     >
       <div className="p-4">
         <div className="flex gap-1.5">
@@ -172,7 +170,7 @@ export function DowSheet({
 
         {active.length === 0 && (
           <p className="mt-4 text-xs text-warn">
-            요일을 하나도 고르지 않으면 결과가 비어요.
+            고른 요일이 없어요.
           </p>
         )}
       </div>

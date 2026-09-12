@@ -19,6 +19,8 @@ export type Row =
       total: number;
       partial: boolean;
       roomCount: number;
+      photo: string | null;
+      ground: string;
     }
   | {
       kind: "room";
@@ -93,6 +95,8 @@ export function buildRows(
         total: zone.total,
         partial: pick.mode === "some",
         roomCount: catalog.length,
+        photo: zone.photo,
+        ground: zone.ground,
       });
 
       if (!expanded[zoneKey]) continue;

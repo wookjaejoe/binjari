@@ -3,7 +3,7 @@
 import { Sheet } from "@/components/Sheet";
 import { Spinner, cx, won } from "@/components/ui";
 import { evaluate, selectedRooms, type CampData, type Row } from "@/lib/availability";
-import { formatLong, shiftISO } from "@/lib/date";
+import { formatLong, formatShort, shiftISO } from "@/lib/date";
 import { useBookingTarget } from "@/lib/hooks";
 import type { ZoneSelection } from "@/store/selection";
 
@@ -21,7 +21,7 @@ function BookingButton({
   const { data: target, isPending, error } = useBookingTarget(campId, date, nights);
 
   if (error) {
-    return <p className="text-xs text-warn">예약 링크를 만들지 못했어요.</p>;
+    return <p className="text-xs text-warn">예약 링크를 만들지 못했어요. 원 사이트에서 찾아볼 수 있어요.</p>;
   }
 
   return (
@@ -90,7 +90,7 @@ export function DayDetail({
       title={date ? formatLong(date) : ""}
       subtitle={
         date
-          ? `${nights}박 · ${date} → ${shiftISO(date, nights)} 체크아웃`
+          ? `${nights}박 · ${formatShort(date)} → ${formatShort(shiftISO(date, nights))} 체크아웃`
           : undefined
       }
       footer={
@@ -105,9 +105,6 @@ export function DayDetail({
                 nights={nights}
               />
             ))}
-            <p className="text-center text-xs text-subtle">
-              새 탭에서 이 일정이 선택된 채로 열려요
-            </p>
           </div>
         ) : undefined
       }
@@ -161,7 +158,7 @@ export function DayDetail({
                               ? "마감"
                               : cell.state === "outside"
                                 ? "예약 기간 아님"
-                                : "조회 불가"}
+                                : "조회 실패"}
                         </span>
                         {cell.state === "open" && cell.amount != null && (
                           <span className="ml-auto text-xs text-muted num">

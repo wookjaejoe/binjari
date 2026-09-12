@@ -14,7 +14,7 @@ const camp = {
   name: "봉수대오토캠핑장",
   portalId: "gwgs",
   portalLabel: "고성군",
-  window: { start: "2026-09-02", end: "2026-09-05", minStay: 1, maxStay: 7 },
+  window: { start: "2026-09-02", end: "2026-09-05", maxStay: 7 },
   status: "open" as const,
   zoneCount: 2,
   roomCount: 8,
@@ -31,8 +31,26 @@ function bundle(overrides: Partial<CampData> = {}): CampData {
       tooManyNights: false,
       dates: ["2026-09-02", "2026-09-03", "2026-09-04"],
       zones: [
-        { no: "27", name: "카라반6인특실", total: 6, size: "", maxPeop: 6, order: 4 },
-        { no: "10", name: "카라반4인", total: 2, size: "", maxPeop: 4, order: 6 },
+        {
+          no: "27",
+          name: "카라반6인특실",
+          total: 6,
+          size: "",
+          maxPeop: 6,
+          order: 4,
+          photo: null,
+          ground: "데크",
+        },
+        {
+          no: "10",
+          name: "카라반4인",
+          total: 2,
+          size: "",
+          maxPeop: 4,
+          order: 6,
+          photo: null,
+          ground: "데크",
+        },
       ],
       counts: {
         "2026-09-02": { "27": 3, "10": 0 },
@@ -51,9 +69,27 @@ function bundle(overrides: Partial<CampData> = {}): CampData {
       campId: camp.id,
       nights: 1,
       rooms: [
-        { no: "477", zoneNo: "27", name: "카라반(특)6-1", amount: 140000, size: "" },
-        { no: "485", zoneNo: "27", name: "카라반(특)6-2", amount: 140000, size: "" },
-        { no: "486", zoneNo: "27", name: "카라반(특)6-3", amount: 140000, size: "" },
+        {
+          no: "477",
+          zoneNo: "27",
+          name: "카라반(특)6-1",
+          amount: 140000,
+          size: "",
+        },
+        {
+          no: "485",
+          zoneNo: "27",
+          name: "카라반(특)6-2",
+          amount: 140000,
+          size: "",
+        },
+        {
+          no: "486",
+          zoneNo: "27",
+          name: "카라반(특)6-3",
+          amount: 140000,
+          size: "",
+        },
       ],
       available: {
         "2026-09-02": ["477", "486"],
@@ -83,7 +119,10 @@ describe("dateColumns", () => {
 describe("buildRows", () => {
   it("선택한 구역만 구역 순서대로 행을 만든다", () => {
     const rows = buildRows([bundle()], all, {});
-    expect(rows.map((row) => row.label)).toEqual(["카라반6인특실", "카라반4인"]);
+    expect(rows.map((row) => row.label)).toEqual([
+      "카라반6인특실",
+      "카라반4인",
+    ]);
   });
 
   it("선택하지 않은 캠핑장은 제외한다", () => {
@@ -136,8 +175,12 @@ describe("buildRows", () => {
 describe("evaluate", () => {
   const data = [bundle()];
   const rows = buildRows(data, all, { [`${camp.id}::27`]: true });
-  const zoneRow = rows.find((row) => row.kind === "zone" && row.zoneNo === "27")!;
-  const roomRow = rows.find((row) => row.kind === "room" && row.roomNo === "485")!;
+  const zoneRow = rows.find(
+    (row) => row.kind === "zone" && row.zoneNo === "27",
+  )!;
+  const roomRow = rows.find(
+    (row) => row.kind === "room" && row.roomNo === "485",
+  )!;
 
   it("구역 전체 선택이면 구역 잔여 수를 쓴다", () => {
     expect(evaluate(zoneRow, "2026-09-02", data, all)).toMatchObject({
@@ -167,14 +210,18 @@ describe("evaluate", () => {
 
   it("일부 선택은 선택한 객실 중 가능한 수만 센다", () => {
     const partial = {
-      [camp.id]: { "27": { mode: "some", rooms: ["485", "486"] } as ZoneSelection },
+      [camp.id]: {
+        "27": { mode: "some", rooms: ["485", "486"] } as ZoneSelection,
+      },
     };
     const partialRows = buildRows(data, partial, {});
-    expect(evaluate(partialRows[0], "2026-09-02", data, partial)).toMatchObject({
-      state: "open",
-      count: 1,
-      capacity: 2,
-    });
+    expect(evaluate(partialRows[0], "2026-09-02", data, partial)).toMatchObject(
+      {
+        state: "open",
+        count: 1,
+        capacity: 2,
+      },
+    );
   });
 
   it("최대 숙박일수를 넘긴 캠핑장은 전 기간이 기간 아님이다", () => {
@@ -193,9 +240,9 @@ describe("evaluate", () => {
     };
     const noRooms = bundle({ roomScan: undefined });
     const partialRows = buildRows([noRooms], partial, {});
-    expect(evaluate(partialRows[0], "2026-09-02", [noRooms], partial).state).toBe(
-      "unknown",
-    );
+    expect(
+      evaluate(partialRows[0], "2026-09-02", [noRooms], partial).state,
+    ).toBe("unknown");
   });
 });
 
@@ -210,9 +257,21 @@ describe("summarizeDays", () => {
       all,
     );
 
-    expect(first).toMatchObject({ openRows: 1, openUnits: 3, minAmount: 140000 });
-    expect(second).toMatchObject({ openRows: 1, openUnits: 2, minAmount: 80000 });
-    expect(third).toMatchObject({ openRows: 2, openUnits: 7, minAmount: 80000 });
+    expect(first).toMatchObject({
+      openRows: 1,
+      openUnits: 3,
+      minAmount: 140000,
+    });
+    expect(second).toMatchObject({
+      openRows: 1,
+      openUnits: 2,
+      minAmount: 80000,
+    });
+    expect(third).toMatchObject({
+      openRows: 2,
+      openUnits: 7,
+      minAmount: 80000,
+    });
     expect(third.activeRows).toBe(2);
   });
 

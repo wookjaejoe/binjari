@@ -17,7 +17,7 @@ export type CampRef = {
 export type BookingWindow = {
   start: string;
   end: string;
-  minStay: number;
+  /** 이 캠핑장이 받는 최대 연박. 이보다 긴 숙박을 고르면 그 캠핑장을 조회에서 뺀다. */
   maxStay: number;
 };
 
@@ -28,6 +28,10 @@ export type Zone = {
   size: string;
   maxPeop: number;
   order: number;
+  /** 구역 대표 사진(절대 URL). 포털이 안 주는 구역도 있다. */
+  photo: string | null;
+  /** 바닥 — "데크" · "잔디" · "맨흙" · "혼합" */
+  ground: string;
 };
 
 export type ZoneDay = {

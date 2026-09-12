@@ -41,8 +41,7 @@ export function DayStream({
   if (!zoneRows.length) {
     return (
       <Empty
-        title="조회할 대상이 없어요"
-        hint="위 대상 버튼에서 캠핑장과 구역을 골라 주세요."
+        title="고른 대상이 없어요"
       />
     );
   }
@@ -65,7 +64,7 @@ export function DayStream({
     return (
       <Empty
         title={`${nights}박으로는 빈자리가 없어요`}
-        hint="숙박일수를 줄이거나 대상을 늘려 보세요. 취소가 나오면 여기에 바로 올라와요."
+        hint="숙박일수를 줄이거나 대상을 늘려 봐요."
       />
     );
   }

@@ -76,7 +76,7 @@ export function TargetPicker({ data }: { data: CampData[] }) {
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="캠핑장 · 구역 · 객실 이름으로 찾기"
+          placeholder="캠핑장 · 구역 · 객실"
           className="min-w-0 flex-1 rounded-md bg-surface-2 px-3 py-2 text-sm outline-none placeholder:text-subtle"
         />
         {pickedCamps > 0 && (

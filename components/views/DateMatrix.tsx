@@ -4,7 +4,7 @@ import { Fragment } from "react";
 
 import { FILL, Empty, cx } from "@/components/ui";
 import { evaluate, type Cell, type CampData, type Row } from "@/lib/availability";
-import { DOW, dowIndex, monthKey, todayISO } from "@/lib/date";
+import { DOW, dowIndex, formatShort, monthKey, todayISO } from "@/lib/date";
 import { fillScale } from "@/lib/policy";
 import type { ZoneSelection } from "@/store/selection";
 
@@ -43,8 +43,7 @@ export function DateMatrix({
   if (!rows.length) {
     return (
       <Empty
-        title="조회할 대상이 없어요"
-        hint="위 대상 버튼에서 캠핑장과 구역을 골라 주세요."
+        title="고른 대상이 없어요"
       />
     );
   }
@@ -183,7 +182,7 @@ export function DateMatrix({
                     return (
                       <td
                         key={date}
-                        title={`${row.campName} · ${row.label} · ${date}`}
+                        title={`${row.campName} · ${row.label} · ${formatShort(date)}`}
                         onClick={() =>
                           (cell.state === "open" || cell.state === "full") &&
                           onPick(row.campId, date)

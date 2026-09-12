@@ -4,7 +4,7 @@ import { Fragment } from "react";
 
 import { FILL, Empty, cx } from "@/components/ui";
 import type { DaySummary } from "@/lib/availability";
-import { DOW, dowIndex, todayISO } from "@/lib/date";
+import { DOW, dowIndex, formatShort, todayISO } from "@/lib/date";
 import { fillScale } from "@/lib/policy";
 
 type Props = {
@@ -35,8 +35,7 @@ export function HeatGrid({ summaries, activeDows, selectedDate, onPick }: Props)
   if (!summaries.length) {
     return (
       <Empty
-        title="조회할 대상이 없어요"
-        hint="위 대상 버튼에서 캠핑장과 구역을 골라 주세요."
+        title="고른 대상이 없어요"
       />
     );
   }
@@ -111,7 +110,7 @@ export function HeatGrid({ summaries, activeDows, selectedDate, onPick }: Props)
                   disabled={inactive}
                   onClick={() => onPick(summary.date)}
                   style={{ height: ROW }}
-                  title={`${summary.date} · ${
+                  title={`${formatShort(summary.date)} · ${
                     inactive
                       ? "예약 기간 아님"
                       : open
@@ -151,10 +150,6 @@ export function HeatGrid({ summaries, activeDows, selectedDate, onPick }: Props)
         ))}
       </div>
 
-      <p className="mt-3 text-2xs leading-relaxed text-subtle">
-        위는 날짜, 아래는 열려 있는 자리 수예요. 농도는 조회 기간 안에서의 상대적인
-        양이라, 진할수록 여유로운 날이에요.
-      </p>
     </div>
   );
 }

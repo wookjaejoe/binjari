@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildValidMap, reconcileSelection, type Selection } from "@/lib/selection";
+import {
+  buildValidMap,
+  reconcileSelection,
+  type Selection,
+} from "@/lib/selection";
 import type { CampProfile, CampStatus, ZoneScan } from "@/lib/types";
 
 const all = { mode: "all" } as const;
@@ -14,7 +18,7 @@ function camp(id: string, status: CampStatus): CampProfile {
     window:
       status === "unopened"
         ? null
-        : { start: "2026-09-02", end: "2026-10-31", minStay: 1, maxStay: 7 },
+        : { start: "2026-09-02", end: "2026-10-31", maxStay: 7 },
     status,
     zoneCount: 0,
     roomCount: 0,
@@ -26,7 +30,7 @@ function scan(campId: string, zoneNos: string[]): ZoneScan {
     campId,
     campName: campId,
     nights: 1,
-    window: { start: "2026-09-02", end: "2026-10-31", minStay: 1, maxStay: 7 },
+    window: { start: "2026-09-02", end: "2026-10-31", maxStay: 7 },
     tooManyNights: false,
     dates: [],
     zones: zoneNos.map((no) => ({
@@ -36,6 +40,8 @@ function scan(campId: string, zoneNos: string[]): ZoneScan {
       size: "",
       maxPeop: 4,
       order: 1,
+      photo: null,
+      ground: "데크",
     })),
     counts: {},
     amounts: {},
@@ -59,13 +65,18 @@ describe("buildValidMap", () => {
     expect(buildValidMap(camps, new Map())).toEqual({});
 
     const current: Selection = { prep: { "30": all }, closed: {} };
-    expect(reconcileSelection(current, buildValidMap(camps, new Map()))).toEqual({});
+    expect(
+      reconcileSelection(current, buildValidMap(camps, new Map())),
+    ).toEqual({});
   });
 
   it("구역 스캔이 도착한 캠핑장만 구역 목록으로 좁힌다", () => {
     const camps = [camp("a", "open"), camp("b", "open")];
     const scans = new Map([["a", scan("a", ["1", "2"])]]);
-    expect(buildValidMap(camps, scans)).toEqual({ a: ["1", "2"], b: "unknown" });
+    expect(buildValidMap(camps, scans)).toEqual({
+      a: ["1", "2"],
+      b: "unknown",
+    });
   });
 });
 

@@ -1,6 +1,5 @@
 import { MINUTE, createLimiter, invalidate, memo } from "@/lib/cache";
-import { enumerateDates, shiftISO, todayISO } from "@/lib/date";
-import { isBookableZone } from "@/lib/policy";
+import { enumerateDates, todayISO } from "@/lib/date";
 import { resolveCamp } from "@/lib/registry";
 import type {
   BookingWindow,
@@ -14,12 +13,14 @@ import type {
 const SCAN_TTL = 3 * MINUTE;
 const CONCURRENCY = 8;
 
-/** nights박 체크인이 가능한 날짜 범위. 체크아웃이 예약 마감일 다음날을 넘지 못한다. */
-export function checkInDates(window: BookingWindow, nights: number): string[] {
+/**
+ * 물어볼 체크인 날짜. 오늘 이전만 달력 상식으로 빼고 예약 기간 끝까지 전부 묻는다.
+ * 숙박일수로 끝을 당기지 않는다 — 기간을 넘기는 일정은 포털이 0 으로 답한다.
+ */
+export function checkInDates(window: BookingWindow): string[] {
   const start = todayISO() > window.start ? todayISO() : window.start;
-  const last = shiftISO(window.end, -(nights - 1));
-  if (last < start) return [];
-  return enumerateDates(start, last);
+  if (window.end < start) return [];
+  return enumerateDates(start, window.end);
 }
 
 export function scanZones(campId: string, nights: number): Promise<ZoneScan> {
@@ -35,30 +36,10 @@ export function scanZones(campId: string, nights: number): Promise<ZoneScan> {
     };
 
     if (!window) {
-      return {
-        ...base,
-        tooManyNights: false,
-        dates: [],
-        zones: [],
-        counts: {},
-        amounts: {},
-        failedDates: [],
-      };
-    }
-    if (nights > window.maxStay) {
-      return {
-        ...base,
-        tooManyNights: true,
-        dates: [],
-        // 조회는 못 하지만 구역 이름은 살려 둔다. 화면에서 이름 없는 행이 되지 않도록.
-        zones: nights === 1 ? [] : (await scanZones(campId, 1)).zones,
-        counts: {},
-        amounts: {},
-        failedDates: [],
-      };
+      return { ...base, dates: [], zones: [], counts: {}, amounts: {}, failedDates: [] };
     }
 
-    const dates = checkInDates(window, nights);
+    const dates = checkInDates(window);
     const limit = createLimiter(CONCURRENCY);
     const results = await Promise.all(
       dates.map((date) =>
@@ -83,7 +64,7 @@ export function scanZones(campId: string, nights: number): Promise<ZoneScan> {
         continue;
       }
       for (const zone of day.zones) {
-        if (isBookableZone(zone) && !zones.has(zone.no)) zones.set(zone.no, zone);
+        if (!zones.has(zone.no)) zones.set(zone.no, zone);
       }
       counts[date] = day.counts;
       amounts[date] = day.amounts;
@@ -91,8 +72,7 @@ export function scanZones(campId: string, nights: number): Promise<ZoneScan> {
 
     return {
       ...base,
-      tooManyNights: false,
-      dates: dates.filter((d) => !failedDates.includes(d)),
+      dates,
       zones: [...zones.values()].sort((a, b) => a.order - b.order),
       counts,
       amounts,
@@ -102,8 +82,9 @@ export function scanZones(campId: string, nights: number): Promise<ZoneScan> {
 }
 
 /**
- * 객실 단위 가용성. 존이 마감인 날은 어차피 빈 응답이므로 건너뛴다.
- * `zoneFilter`를 주면 그 존만 조회한다.
+ * 객실 단위 가용성. 요청된 존 × 모든 날짜를 묻는다. 구역 잔여가 0 인 날을
+ * 건너뛰지 않는다 — 그건 앱이 포털 대신 답을 정하는 일이다.
+ * `zoneFilter` 가 비어 있으면 구역 스캔에서 본 존 전부.
  */
 export function scanRooms(
   campId: string,
@@ -114,17 +95,13 @@ export function scanRooms(
   return memo(`scan:rooms:${campId}:${nights}:${key}`, SCAN_TTL, async () => {
     const { camp, portal, provider } = await resolveCamp(campId);
     const zoneScan = await scanZones(campId, nights);
-    const wanted = zoneScan.zones.filter(
-      (z) => !zoneFilter?.length || zoneFilter.includes(z.no),
-    );
+    const wanted = zoneFilter?.length
+      ? zoneFilter
+      : zoneScan.zones.map((zone) => zone.no);
 
     const tasks: { date: string; zoneNo: string }[] = [];
     for (const date of zoneScan.dates) {
-      for (const zone of wanted) {
-        if ((zoneScan.counts[date]?.[zone.no] ?? 0) > 0) {
-          tasks.push({ date, zoneNo: zone.no });
-        }
-      }
+      for (const zoneNo of wanted) tasks.push({ date, zoneNo });
     }
 
     const limit = createLimiter(CONCURRENCY);
@@ -142,15 +119,15 @@ export function scanRooms(
 
     const rooms = new Map<string, Room>();
     const available: Record<string, string[]> = {};
-    const covered = new Set<string>();
+    const failed: Record<string, string[]> = {};
 
     for (const { date, zoneNo, day } of results) {
-      if (!day) continue;
-      if (day.rooms.length) covered.add(zoneNo);
-      for (const room of day.rooms) if (!rooms.has(room.no)) rooms.set(room.no, room);
-      if (day.available.length) {
-        available[date] = [...(available[date] ?? []), ...day.available];
+      if (!day) {
+        failed[zoneNo] = [...(failed[zoneNo] ?? []), date];
+        continue;
       }
+      for (const room of day.rooms) if (!rooms.has(room.no)) rooms.set(room.no, room);
+      available[date] = [...(available[date] ?? []), ...day.available];
     }
 
     return {
@@ -158,51 +135,35 @@ export function scanRooms(
       nights,
       rooms: [...rooms.values()].sort((a, b) => a.name.localeCompare(b.name, "ko")),
       available,
-      zonesWithoutCatalog: wanted.filter((z) => !covered.has(z.no)).map((z) => z.no),
+      failed,
       generatedAt: new Date().toISOString(),
     };
   });
 }
 
-/**
- * 캠핑장 한 곳의 운영 상태. 예약 기간이 없으면 미오픈, 기간은 있는데
- * 실제 예약 가능한 구역이 없으면 준비 중으로 본다.
- */
+/** 캠핑장 한 곳의 표시 정보. 포털에 예약 기간만 묻고, 못 얻으면 사유를 그대로 싣는다. */
 export function campProfile(campId: string): Promise<CampProfile> {
   return memo(`profile:${campId}`, 10 * MINUTE, async () => {
     const { camp, portal, provider } = await resolveCamp(campId);
-    const window = await provider.bookingWindow(portal, camp);
     const base = {
       id: campId,
       name: camp.name,
       portalId: portal.id,
       portalLabel: portal.label,
-      window,
     };
 
-    if (!window) {
-      return { ...base, status: "unopened" as const, zoneCount: 0, roomCount: 0 };
-    }
-
-    const probe = checkInDates(window, 1)[0] ?? window.start;
-    let day;
+    let window: BookingWindow | null;
     try {
-      day = await provider.zoneDay(portal, camp, probe, 1);
-    } catch {
-      // 조회 실패는 "준비 중"이 아니다. 그렇게 판정하면 저장된 선택이 지워진다.
-      return { ...base, status: "unknown" as const, zoneCount: 0, roomCount: 0 };
+      window = await provider.bookingWindow(portal, camp);
+    } catch (error) {
+      return {
+        ...base,
+        window: null,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-    if (!day) {
-      return { ...base, status: "unknown" as const, zoneCount: 0, roomCount: 0 };
-    }
-
-    const zones = day.zones.filter(isBookableZone);
-    return {
-      ...base,
-      status: zones.length ? ("open" as const) : ("preparing" as const),
-      zoneCount: zones.length,
-      roomCount: zones.reduce((sum, zone) => sum + zone.total, 0),
-    };
+    // 응답은 받았는데 기간 필드가 없는 것은 실패가 아니다. error 없이 window 만 null.
+    return { ...base, window };
   });
 }
 

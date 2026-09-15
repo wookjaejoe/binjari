@@ -3,7 +3,6 @@
 import { Sheet } from "@/components/Sheet";
 import { cx } from "@/components/ui";
 import { DOW } from "@/lib/date";
-import type { CampProfile } from "@/lib/types";
 
 const DOW_PRESETS: { label: string; dows: number[] }[] = [
   { label: "제한 없음", dows: [] },
@@ -12,21 +11,20 @@ const DOW_PRESETS: { label: string; dows: number[] }[] = [
   { label: "평일", dows: [1, 2, 3, 4] },
 ];
 
+/** 포털 한도와 무관한 고정 목록. 한도를 넘겨 물어도 포털은 오류 없이 0 을 준다. */
+const NIGHTS = [1, 2, 3, 4, 5, 6, 7];
+
 export function NightsSheet({
   open,
   nights,
-  camps,
   onClose,
   onPick,
 }: {
   open: boolean;
   nights: number;
-  camps: CampProfile[];
   onClose: () => void;
   onPick: (nights: number) => void;
 }) {
-  const limit = Math.max(1, ...camps.map((camp) => camp.window?.maxStay ?? 1));
-
   return (
     <Sheet
       open={open}
@@ -34,58 +32,46 @@ export function NightsSheet({
       title="숙박일수"
     >
       <ul className="p-2">
-        {Array.from({ length: Math.max(limit, nights) }, (_, i) => i + 1).map(
-          (value) => {
-            const blocked = camps.filter(
-              (camp) => (camp.window?.maxStay ?? 1) < value,
-            );
-            return (
-              <li key={value}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onPick(value);
-                    onClose();
-                  }}
-                  className={cx(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left active:bg-surface-2",
-                    value === nights && "bg-surface-2",
-                  )}
+        {NIGHTS.map((value) => (
+          <li key={value}>
+            <button
+              type="button"
+              onClick={() => {
+                onPick(value);
+                onClose();
+              }}
+              className={cx(
+                "flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left active:bg-surface-2",
+                value === nights && "bg-surface-2",
+              )}
+            >
+              <span
+                className={cx(
+                  "text-base num",
+                  value === nights ? "font-semibold" : "font-normal",
+                )}
+              >
+                {value}박
+              </span>
+              {value === nights && (
+                <svg
+                  viewBox="0 0 12 12"
+                  className="ml-auto size-3.5 shrink-0"
+                  aria-hidden
                 >
-                  <span
-                    className={cx(
-                      "text-base num",
-                      value === nights ? "font-semibold" : "font-normal",
-                    )}
-                  >
-                    {value}박
-                  </span>
-                  {blocked.length > 0 && (
-                    <span className="min-w-0 flex-1 truncate text-xs text-muted">
-                      {blocked.map((camp) => camp.name).join(", ")} 제외
-                    </span>
-                  )}
-                  {value === nights && (
-                    <svg
-                      viewBox="0 0 12 12"
-                      className="ml-auto size-3.5 shrink-0"
-                      aria-hidden
-                    >
-                      <path
-                        d="M2 6.4l2.6 2.6L10 3.6"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </button>
-              </li>
-            );
-          },
-        )}
+                  <path
+                    d="M2 6.4l2.6 2.6L10 3.6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
+          </li>
+        ))}
       </ul>
     </Sheet>
   );

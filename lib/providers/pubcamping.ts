@@ -110,7 +110,8 @@ export const pubcamping: CampProvider = {
     return {
       start: compactToISO(str(data.room_start_day)),
       end: compactToISO(str(data.room_end_day)),
-      maxStay: Math.max(1, num(data.max_stay_limit) || 1),
+      maxStay: num(data.max_stay_limit) || null,
+      minStay: num(data.min_stay_limit) || null,
     } satisfies BookingWindow;
   },
 

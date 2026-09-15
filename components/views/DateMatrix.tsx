@@ -2,10 +2,9 @@
 
 import { Fragment } from "react";
 
-import { FILL, cx } from "@/components/ui";
-import { evaluate, type Cell, type CampData, type Row } from "@/lib/availability";
+import { cx } from "@/components/ui";
+import { evaluate, type CampData, type Row } from "@/lib/availability";
 import { DOW, dowIndex, formatShort, monthKey, todayISO } from "@/lib/date";
-import { fillScale } from "@/lib/policy";
 import type { ZoneSelection } from "@/store/selection";
 
 type Props = {
@@ -19,18 +18,22 @@ type Props = {
 
 /** 좌측 라벨 폭. 구역 이름이 한 줄로 들어갈 만큼. */
 const LABEL = "6.5rem";
-/** 날짜 열 — 셀에는 잔여 수 한두 자리만 들어가므로 좁아도 된다. */
+/** 날짜 열 — 셀에는 채움 아니면 물음표 하나뿐이므로 좁아도 된다. */
 const COL = "1.625rem";
+
+function selectedCount(pick: ZoneSelection | undefined) {
+  return pick?.mode === "some" ? pick.rooms.length : 0;
+}
 
 /**
  * 행=구역/객실, 열=날짜. 간트 차트·숙소 관리 시스템의 객실 달력과 같은 방향이다.
  *
  * 축을 반대로(행=날짜, 열=구역) 두면 "카라반6인특실" 같은 이름을 48px 열에
- * 밀어넣어야 해서 잘리는데, 정작 셀에 들어가는 것은 숫자 한두 자뿐이라 폭이
+ * 밀어넣어야 해서 잘리는데, 정작 셀에 들어가는 것은 채움 하나뿐이라 폭이
  * 낭비된다. 이름은 좌측에서 가로로 쓰고 날짜 열은 좁게 두는 편이 맞다.
  *
- * 열이 60개라 가로 스크롤은 불가피하다 — 이 화면의 몫은 전체 개관이 아니라
- * 대상 간 정밀 비교이고, 개관은 히트맵이 맡는다.
+ * 열이 60개라 가로 스크롤은 불가피하다. 칸은 있음(채움)·없음(비움)·모름(?)
+ * 셋뿐이고 숫자를 넣지 않는다 — 자리 수의 많고 적음은 이 화면의 질문이 아니다.
  */
 export function DateMatrix({
   rows,
@@ -40,24 +43,7 @@ export function DateMatrix({
   selected,
   onPick,
 }: Props) {
-
   const today = todayISO();
-
-  // 셀을 먼저 전부 구한다. 농도 스케일이 화면 전체의 분포를 알아야 하고,
-  // 두 번 평가하지 않기 위해서다.
-  const cells = new Map<string, Cell>();
-  for (const row of rows) {
-    for (const date of dates) {
-      cells.set(`${row.key}|${date}`, evaluate(row, date, data, selection));
-    }
-  }
-
-  // 행마다 면 수가 82면부터 1면까지 벌어지므로 잔여 수 자체가 아니라 잔여 비율을
-  // 비교한다. 그렇지 않으면 큰 구역이 늘 진하고 단일 객실은 늘 흐리다.
-  const ratio = (cell: Cell) => cell.count / Math.max(1, cell.capacity);
-  const shade = fillScale(
-    [...cells.values()].filter((cell) => cell.state === "open").map(ratio),
-  );
 
   const groups: { campName: string; rows: Row[] }[] = [];
   for (const row of rows) {
@@ -156,16 +142,15 @@ export function DateMatrix({
                     style={{ width: LABEL, minWidth: LABEL }}
                   >
                     <span className="block truncate">{row.label}</span>
-                    {row.kind === "zone" && (
+                    {row.kind === "zone" && row.partial && (
                       <span className="block truncate text-2xs text-subtle num">
-                        {row.partial ? `${row.capacity}/${row.total}면 선택` : `${row.total}면`}
+                        {selectedCount(selection[row.campId]?.[row.zoneNo])}개 선택
                       </span>
                     )}
                   </th>
 
                   {dates.map((date) => {
-                    const cell = cells.get(`${row.key}|${date}`)!;
-                    const level = cell.state === "open" ? shade(ratio(cell)) : 0;
+                    const state = evaluate(row, date, data, selection).state;
                     const isSelected =
                       selected?.date === date && selected?.campId === row.campId;
 
@@ -173,29 +158,16 @@ export function DateMatrix({
                       <td
                         key={date}
                         title={`${row.campName} · ${row.label} · ${formatShort(date)}`}
-                        onClick={() =>
-                          (cell.state === "open" || cell.state === "full") &&
-                          onPick(row.campId, date)
-                        }
+                        onClick={() => state !== "unknown" && onPick(row.campId, date)}
                         style={{ width: COL, minWidth: COL }}
                         className={cx(
-                          "h-8 border-r border-b border-line text-center num",
-                          cell.state === "open" &&
-                            cx("cursor-pointer font-semibold", FILL[level]),
-                          cell.state === "full" && "cursor-pointer text-subtle",
-                          cell.state === "outside" && "hatch opacity-45",
+                          "h-8 border-r border-b border-line text-center text-subtle num",
+                          state !== "unknown" && "cursor-pointer",
+                          state === "open" && "bg-fill",
                           isSelected && "ring-2 ring-accent ring-inset",
                         )}
                       >
-                        {cell.state === "open"
-                          ? cell.capacity === 1
-                            ? "●"
-                            : cell.count
-                          : cell.state === "full"
-                            ? "·"
-                            : cell.state === "unknown"
-                              ? "?"
-                              : ""}
+                        {state === "unknown" ? "?" : ""}
                       </td>
                     );
                   })}

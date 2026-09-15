@@ -6,10 +6,11 @@ export type ZoneScan = {
   campId: string;
   campName: string;
   nights: number;
+  /** null 이면 포털이 기간을 주지 않은 것. 요청 자체가 실패했으면 error 에 사유가 있다. */
   window: BookingWindow | null;
-  /** nights가 이 캠핑장의 최대 숙박일수를 넘어선 경우 */
-  tooManyNights: boolean;
+  /** 물어본 날짜 전부. 실패한 날짜도 들어 있다 — 그래야 그 열이 "모름"으로 남는다. */
   dates: string[];
+  /** 성공한 날짜 응답들의 합집합. 먼저 본 값을 유지한다. */
   zones: Zone[];
   counts: Record<string, Record<string, number>>;
   amounts: Record<string, Record<string, number | null>>;
@@ -20,21 +21,14 @@ export type ZoneScan = {
 export type RoomScan = {
   campId: string;
   nights: number;
+  /** 성공한 응답들의 합집합 */
   rooms: Room[];
+  /** date → 그 날짜에 성공한 응답이 열려 있다고 한 객실 번호 */
   available: Record<string, string[]>;
-  /** 조회 기간 내내 마감이라 객실 목록을 얻지 못한 존 */
-  zonesWithoutCatalog: string[];
+  /** zoneNo → 조회에 실패한 날짜. 마감과 구분해 "모름"으로 그리기 위해 둔다. */
+  failed: Record<string, string[]>;
   generatedAt: string;
 };
-
-/**
- * open      예약 가능한 구역이 있다
- * preparing 예약 기간은 있는데 열린 구역이 없다
- * unopened  예약 기간 자체가 설정되지 않았다
- * unknown   조회에 실패했다 — 위 셋과 반드시 구분해야 한다.
- *           실패를 "운영 전"으로 오판하면 사용자의 선택이 지워진다.
- */
-export type CampStatus = "open" | "preparing" | "unopened" | "unknown";
 
 export type CampProfile = {
   id: string;
@@ -42,7 +36,6 @@ export type CampProfile = {
   portalId: string;
   portalLabel: string;
   window: BookingWindow | null;
-  status: CampStatus;
-  zoneCount: number;
-  roomCount: number;
+  /** window 가 null 일 때 그 사유. HTTP 상태처럼 사실만 적는다. */
+  error?: string;
 };

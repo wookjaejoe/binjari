@@ -11,15 +11,12 @@ import {
 } from "react";
 
 import { DayDetail } from "@/components/DayDetail";
-import { Highlight } from "@/components/Highlight";
 import { DowSheet, NightsSheet, dowLabel } from "@/components/FilterSheets";
 import { Legend } from "@/components/Legend";
 import { Sheet } from "@/components/Sheet";
 import { TargetPicker } from "@/components/TargetPicker";
-import { Empty, SegBar, Skeleton, Spinner, Switch, cx } from "@/components/ui";
+import { Empty, Skeleton, Spinner, Switch, cx } from "@/components/ui";
 import { DateMatrix } from "@/components/views/DateMatrix";
-import { DayStream } from "@/components/views/DayStream";
-import { HeatGrid } from "@/components/views/HeatGrid";
 import {
   buildRows,
   dateColumns,
@@ -29,10 +26,8 @@ import {
 import { dowIndex } from "@/lib/date";
 import type { RoomScan, ZoneScan } from "@/lib/types";
 import { DEFAULT_CAMP_IDS, REFRESH_INTERVAL } from "@/lib/defaults";
-import { buildValidMap } from "@/lib/selection";
 import { useCamps, useRoomScans, useZoneScans, type RoomRequest } from "@/lib/hooks";
 import { usePendingSelection } from "@/lib/usePendingSelection";
-import { VIEWS, normalizeView } from "@/lib/views";
 import { useSelection } from "@/store/selection";
 
 /** persist된 선택은 hydration 이후에만 신뢰할 수 있다. */
@@ -40,12 +35,14 @@ const noopSubscribe = () => () => {};
 
 type SheetKind = "target" | "nights" | "dows";
 
-type EmptyState = {
-  title: string;
-  /** [버튼 라벨, 여는 시트] */
-  action?: [string, SheetKind];
-  loading?: boolean;
-};
+type EmptyState =
+  | { loading: true }
+  | {
+      loading?: false;
+      title: string;
+      /** [버튼 라벨, 여는 시트] */
+      action?: [string, SheetKind];
+    };
 
 function FilterButton({
   children,
@@ -85,7 +82,6 @@ function FilterButton({
 export default function Page() {
   const {
     nights,
-    view: storedView,
     onlyOpen,
     dows,
     autoRefresh,
@@ -93,12 +89,10 @@ export default function Page() {
     expanded,
     pendingAll,
     setNights,
-    setView,
     setOnlyOpen,
     setDows,
     setAutoRefresh,
     requestCampAll,
-    reconcile,
   } = useSelection();
 
   const mounted = useSyncExternalStore(
@@ -115,11 +109,6 @@ export default function Page() {
   const seeded = useRef(false);
   const queryClient = useQueryClient();
 
-  const view = normalizeView(storedView);
-  useEffect(() => {
-    if (view !== storedView) setView(view);
-  }, [view, storedView, setView]);
-
   const campsQuery = useCamps();
   const camps = useMemo(() => campsQuery.data?.camps ?? [], [campsQuery.data]);
 
@@ -128,9 +117,7 @@ export default function Page() {
     seeded.current = true;
     if (Object.keys(selection).length > 0) return;
     for (const id of DEFAULT_CAMP_IDS) {
-      if (camps.some((camp) => camp.id === id && camp.status === "open")) {
-        requestCampAll(id, "compact");
-      }
+      if (camps.some((camp) => camp.id === id)) requestCampAll(id);
     }
   }, [mounted, camps, selection, requestCampAll]);
 
@@ -141,7 +128,7 @@ export default function Page() {
           (camp) =>
             selection[camp.id] ||
             expanded[camp.id] ||
-            pendingAll.some((p) => p.campId === camp.id),
+            pendingAll.includes(camp.id),
         )
         .map((camp) => camp.id),
     [camps, selection, expanded, pendingAll],
@@ -205,13 +192,6 @@ export default function Page() {
 
   usePendingSelection(data);
 
-  // 저장된 선택은 지난 방문의 것이다. 운영이 멈춘 캠핑장이나 사라진 구역이
-  // 남아 있으면 결과에 섞이므로, 목록이 도착할 때마다 현재 기준으로 정리한다.
-  useEffect(() => {
-    if (!camps.length) return;
-    reconcile(buildValidMap(camps, zoneById));
-  }, [camps, zoneById, reconcile]);
-
   const rows = useMemo(
     () => buildRows(data, selection, expanded),
     [data, selection, expanded],
@@ -228,54 +208,23 @@ export default function Page() {
         : allSummaries,
     [allSummaries, dows],
   );
-  const dates = useMemo(() => summaries.map((s) => s.date), [summaries]);
-  const openCount = summaries.filter((s) => s.openRows > 0).length;
-  const matrixDates = onlyOpen
-    ? summaries.filter((s) => s.openRows > 0).map((s) => s.date)
-    : dates;
+  const openDates = useMemo(
+    () => summaries.filter((s) => s.open).map((s) => s.date),
+    [summaries],
+  );
+  const openCount = openDates.length;
+  const dates = onlyOpen ? openDates : summaries.map((s) => s.date);
 
-  // 빈 상태는 뷰가 아니라 여기서 판단한다. 무엇 때문에 비었는지(대상·숙박일수·
-  // 요일)는 조건을 다 아는 이 층만 알고, 갈 곳이 있으면 문장 대신 버튼을 준다.
+  // 빈 상태는 앱이 아는 사실만 말한다 — 고른 것이 없거나, 빈 날만 보는데 빈 날이
+  // 없거나. 원인 추정도 대안 제시도 없다. 조회 중에는 "없어요"를 띄우지 않는다.
   const pending = zoneScans.some((q) => q.isPending);
   const empty = ((): EmptyState | null => {
+    if (rows.length && !(onlyOpen && openCount === 0)) return null;
+    if (pending) return { loading: true };
     if (!rows.length) {
-      if (pending) return { title: "조회하고 있어요", loading: true };
       return { title: "고른 대상이 없어요", action: ["대상 고르기", "target"] };
     }
-    if (!allDates.length) {
-      if (data.every((d) => d.zoneScan?.tooManyNights)) {
-        const limit = Math.max(1, ...data.map((d) => d.camp.window?.maxStay ?? 1));
-        return {
-          title: `${limit}박까지만 예약할 수 있어요`,
-          action: ["숙박일수 줄이기", "nights"],
-        };
-      }
-      if (pending) return { title: "조회하고 있어요", loading: true };
-      return { title: "조회할 날짜가 없어요" };
-    }
-    if (!dates.length) {
-      return {
-        title: "고른 요일에 체크인할 수 있는 날이 없어요",
-        action: ["요일 바꾸기", "dows"],
-      };
-    }
-    const wantsOpen = view === "stream" || (view === "matrix" && onlyOpen);
-    if (wantsOpen && openCount === 0) {
-      if (nights > 1) {
-        return {
-          title: `${nights}박으로는 빈자리가 없어요`,
-          action: ["숙박일수 줄이기", "nights"],
-        };
-      }
-      if (dows.length) {
-        return {
-          title: "고른 요일에는 빈자리가 없어요",
-          action: ["요일 넓히기", "dows"],
-        };
-      }
-      return { title: "조회 기간에 빈자리가 없어요", action: ["대상 늘리기", "target"] };
-    }
-    return null;
+    return { title: "빈자리가 없어요" };
   })();
 
   const targetSummary = useMemo(() => {
@@ -369,71 +318,42 @@ export default function Page() {
         <p
           className="mx-4 mt-3 rounded-md border border-line bg-surface px-3 py-2.5 text-xs text-warn"
         >
-          지금은 조회가 안 돼요. 잠시 뒤 다시 해 볼게요.
+          조회에 실패했어요.
         </p>
       )}
 
-      <Highlight
-        summaries={allSummaries}
-        rows={rows}
-        data={data}
-        selection={selection}
-        activeDows={dows}
-        nights={nights}
-        onPick={(date) => setSelected({ campId: null, date })}
-      />
-
-      <div className="mt-6 flex items-center justify-between gap-3 px-4 py-2.5">
-        <SegBar value={view} options={VIEWS} onChange={setView} size="sm" />
+      <div className="flex items-center justify-end px-4 py-2.5">
         <span className="text-xs text-muted num">
           가능 <strong className="font-semibold text-fg">{openCount}</strong>일
         </span>
       </div>
 
       <div className="mx-3 overflow-hidden rounded-md border border-line bg-surface">
-        {empty && (
+        {empty?.loading && (
+          <div className="flex justify-center px-6 py-14">
+            <Spinner />
+          </div>
+        )}
+        {empty && !empty.loading && (
           <Empty
             title={empty.title}
             action={
-              empty.loading ? (
-                <Spinner />
-              ) : (
-                empty.action && (
-                  <button
-                    type="button"
-                    onClick={() => setSheet(empty.action![1])}
-                    className="mt-2 rounded-full border border-line px-4 py-2 text-sm font-medium text-fg active:bg-surface-2"
-                  >
-                    {empty.action[0]}
-                  </button>
-                )
+              empty.action && (
+                <button
+                  type="button"
+                  onClick={() => setSheet(empty.action![1])}
+                  className="mt-2 rounded-full border border-line px-4 py-2 text-sm font-medium text-fg active:bg-surface-2"
+                >
+                  {empty.action[0]}
+                </button>
               )
             }
           />
         )}
-        {!empty && view === "heat" && (
-          <HeatGrid
-            summaries={allSummaries}
-            activeDows={dows}
-            selectedDate={selected?.date ?? null}
-            onPick={(date) => setSelected({ campId: null, date })}
-          />
-        )}
-        {!empty && view === "stream" && (
-          <DayStream
-            rows={rows}
-            dates={dates}
-            data={data}
-            selection={selection}
-            nights={nights}
-            selectedDate={selected?.date ?? null}
-            onPick={(date) => setSelected({ campId: null, date })}
-          />
-        )}
-        {!empty && view === "matrix" && (
+        {!empty && (
           <DateMatrix
             rows={rows}
-            dates={matrixDates}
+            dates={dates}
             data={data}
             selection={selection}
             selected={selected}
@@ -445,11 +365,9 @@ export default function Page() {
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
         <Legend />
         <div className="flex items-center gap-4">
-          {view === "matrix" && (
-            <Switch checked={onlyOpen} onChange={setOnlyOpen}>
-              빈 날만
-            </Switch>
-          )}
+          <Switch checked={onlyOpen} onChange={setOnlyOpen}>
+            빈 날만
+          </Switch>
           <Switch checked={autoRefresh} onChange={setAutoRefresh}>
             자동 갱신
           </Switch>
@@ -471,7 +389,6 @@ export default function Page() {
       <NightsSheet
         open={sheet === "nights"}
         nights={nights}
-        camps={camps.filter((camp) => selection[camp.id])}
         onClose={() => setSheet(null)}
         onPick={setNights}
       />

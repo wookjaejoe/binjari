@@ -154,11 +154,9 @@ export function DayDetail({
                         >
                           {cell.state === "open"
                             ? `${cell.count}면`
-                            : cell.state === "full"
-                              ? "마감"
-                              : cell.state === "outside"
-                                ? "예약 기간 아님"
-                                : "조회 실패"}
+                            : cell.state === "none"
+                              ? "없음"
+                              : "모름"}
                         </span>
                         {cell.state === "open" && cell.amount != null && (
                           <span className="ml-auto text-xs text-muted num">

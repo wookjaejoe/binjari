@@ -4,9 +4,9 @@
 /*
  * 웜 중립 + 딥 그린 액센트 하나, 라이트 한 벌. 근거는 DESIGN.md 1부.
  *
- * 액센트는 답(자리 많은 날)·자리 수·오늘·링크에만 쓴다. 컨트롤은 액센트로
- * 채우지 않는다. 격자에는 같은 색상의 불투명 4단(fill-1~4)만 얹어 색상은
- * 여전히 하나로 유지한다 — 색이 여럿이면 색이 데이터를 이긴다.
+ * 액센트는 열린 자리·오늘·링크에만 쓴다. 컨트롤은 액센트로 채우지 않는다.
+ * 격자에는 같은 색상의 불투명 채움 한 단(fill)만 얹어 색상은 여전히 하나로
+ * 유지한다 — 색이 여럿이면 색이 데이터를 이긴다.
  */
 @theme inline {
   --color-bg: var(--bg);
@@ -23,10 +23,7 @@
   --color-warn: var(--warn);
   --color-weekend: var(--weekend);
 
-  --color-fill-1: var(--fill-1);
-  --color-fill-2: var(--fill-2);
-  --color-fill-3: var(--fill-3);
-  --color-fill-4: var(--fill-4);
+  --color-fill: var(--fill);
 
   /*
    * 서체는 한 벌이다. 전에는 라틴·숫자에 Geist, 한글에 Pretendard를 써서
@@ -98,13 +95,10 @@
   --warn: #9a5b0b;
   --weekend: #b4453c;
 
-  /* 농도는 알파가 아니라 불투명 색이다. 알파로 두면 배경의 노란기와 섞여
+  /* 채움은 알파가 아니라 불투명 색이다. 알파로 두면 배경의 노란기와 섞여
      녹색이 올리브로 죽는다 — "노리끼리 흐리멍텅"의 원인이 여기였다.
-     아래 넷은 같은 녹색 계열에서 채도를 지키며 4단으로 뽑은 값이다. */
-  --fill-1: #e9f4ee;
-  --fill-2: #cbe8d8;
-  --fill-3: #9dd4b8;
-  --fill-4: #63bd93;
+     칸은 있음/없음/모름뿐이라 농도 단계가 없다. 한 단이면 된다. */
+  --fill: #9dd4b8;
 }
 
 
@@ -135,17 +129,6 @@ body {
 @utility num {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
-}
-
-/** 예약 기간이 아닌 날 — 마감(농도 0)과 눈으로 구별되어야 한다. */
-@utility hatch {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 3px,
-    var(--line-strong) 3px,
-    var(--line-strong) 4px
-  );
 }
 
 /** 가로 스크롤 영역: 스크롤바를 숨기고 스냅으로 위치를 잡는다. */

@@ -45,6 +45,10 @@ export function formatShort(iso: string): string {
   return `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}`;
 }
 
+export function formatMonthDay(iso: string): string {
+  return `${Number(iso.slice(5, 7))}월 ${Number(iso.slice(8, 10))}일`;
+}
+
 export function formatLong(iso: string): string {
   return `${Number(iso.slice(5, 7))}월 ${Number(iso.slice(8, 10))}일(${DOW[dowIndex(iso)]})`;
 }

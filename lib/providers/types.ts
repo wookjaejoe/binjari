@@ -14,11 +14,16 @@ export type CampRef = {
   name: string;
 };
 
+/**
+ * 포털이 예약을 열어 둔 기간. maxStay·minStay 는 포털이 알려준 값을 그대로 보여주기
+ * 위한 것이지 판단 근거가 아니다 — 이 범위를 넘겨 물어도 포털은 오류 없이 0 을 준다.
+ * 포털이 안 주면 null 로 두고 1 같은 값으로 메우지 않는다.
+ */
 export type BookingWindow = {
   start: string;
   end: string;
-  /** 이 캠핑장이 받는 최대 연박. 이보다 긴 숙박을 고르면 그 캠핑장을 조회에서 뺀다. */
-  maxStay: number;
+  maxStay: number | null;
+  minStay: number | null;
 };
 
 export type Zone = {

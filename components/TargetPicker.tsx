@@ -4,13 +4,20 @@ import { useMemo, useState } from "react";
 
 import { Check, Spinner, cx, wonShort } from "@/components/ui";
 import { selectedRooms, type CampData } from "@/lib/availability";
+import { formatMonthDay } from "@/lib/date";
+import type { BookingWindow } from "@/lib/types";
 import { useSelection } from "@/store/selection";
 
-const STATUS_LABEL = {
-  preparing: "예약 준비 중",
-  unopened: "예약 미오픈",
-  unknown: "조회 실패",
-} as const;
+/** 포털이 알려준 기간과 한도를 그대로 적는다. 없는 값은 조각째 뺀다. */
+function windowLabel(window: BookingWindow | null, error?: string) {
+  if (!window) return error ? "조회 실패" : "예약 기간 없음";
+  return [
+    `${formatMonthDay(window.start)}–${formatMonthDay(window.end)}`,
+    window.maxStay != null && `최대 ${window.maxStay}박`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
 
 function Caret({ open }: { open: boolean }) {
   return (
@@ -38,7 +45,6 @@ export function TargetPicker({ data }: { data: CampData[] }) {
   const {
     selection,
     expanded,
-    nights,
     toggleExpanded,
     setCamp,
     requestCampAll,
@@ -95,64 +101,42 @@ export function TargetPicker({ data }: { data: CampData[] }) {
           const picks = selection[camp.id];
           const campOpen = expanded[camp.id] ?? false;
           const zones = zoneScan?.zones ?? [];
-          const blocked = camp.status !== "open";
           const allOn =
             zones.length > 0 && zones.every((z) => picks?.[z.no]?.mode === "all");
           const campState = !picks ? "off" : allOn ? "on" : "partial";
-          const overStay = zoneScan?.tooManyNights;
 
           return (
             <li key={camp.id} className="border-b border-line last:border-0">
               <div className="flex items-center gap-2.5 px-4 py-2.5">
-                {blocked ? (
-                  <span className="size-5 shrink-0 rounded-sm border border-line" />
-                ) : (
-                  <Check
-                    state={campState}
-                    label={camp.name}
-                    onChange={(on) => {
-                      if (!on) setCamp(camp.id, [], false);
-                      else if (zones.length)
-                        setCamp(camp.id, zones.map((z) => z.no), true);
-                      else requestCampAll(camp.id);
-                    }}
-                  />
-                )}
+                <Check
+                  state={campState}
+                  label={camp.name}
+                  onChange={(on) => {
+                    if (!on) setCamp(camp.id, [], false);
+                    else if (zones.length)
+                      setCamp(camp.id, zones.map((z) => z.no), true);
+                    else requestCampAll(camp.id);
+                  }}
+                />
 
                 <button
                   type="button"
-                  disabled={blocked}
                   onClick={() => toggleExpanded(camp.id)}
                   className="flex min-w-0 flex-1 items-center gap-2 text-left"
                 >
                   <span className="min-w-0 flex-1">
-                    <span
-                      className={cx(
-                        "block truncate text-base font-medium",
-                        blocked && "text-subtle",
-                      )}
-                    >
+                    <span className="block truncate text-base font-medium">
                       {camp.name}
                     </span>
                     <span className="mt-px block truncate text-xs text-muted num">
-                      {blocked
-                        ? STATUS_LABEL[camp.status as keyof typeof STATUS_LABEL]
-                        : camp.window
-                          ? `${camp.window.start.slice(5).replace("-", ".")}–${camp.window.end.slice(5).replace("-", ".")} · 최대 ${camp.window.maxStay}박 · ${camp.roomCount}면`
-                          : ""}
+                      {windowLabel(camp.window, camp.error)}
                     </span>
                   </span>
-                  {!blocked && <Caret open={campOpen} />}
+                  <Caret open={campOpen} />
                 </button>
               </div>
 
-              {overStay && (
-                <p className="px-4 pb-2.5 text-xs text-warn">
-                  {`최대 ${camp.window?.maxStay}박까지만 예약할 수 있어 ${nights}박 결과가 없어요.`}
-                </p>
-              )}
-
-              {campOpen && !blocked && (
+              {campOpen && (
                 <ul className="pb-1">
                   {!zoneScan && (
                     <li className="flex items-center gap-2 px-4 py-2 pl-11 text-xs text-muted">
@@ -169,7 +153,6 @@ export function TargetPicker({ data }: { data: CampData[] }) {
                     );
                     const catalogNos = catalog.map((room) => room.no);
                     const chosen = new Set(selectedRooms(pick, catalogNos));
-                    const noCatalog = roomScan?.zonesWithoutCatalog.includes(zone.no);
 
                     return (
                       <li key={zone.no}>
@@ -207,9 +190,9 @@ export function TargetPicker({ data }: { data: CampData[] }) {
                                 <Spinner /> 객실 조회 중
                               </li>
                             )}
-                            {roomScan && noCatalog && (
-                              <li className="py-1.5 pr-4 pl-16 text-xs leading-relaxed text-muted">
-                                조회 기간 내내 마감이라 개별 객실은 확인할 수 없어요.
+                            {roomScan && !catalog.length && (
+                              <li className="py-1.5 pr-4 pl-16 text-xs text-muted">
+                                객실 목록이 없어요
                               </li>
                             )}
                             {catalog.map((room) => (

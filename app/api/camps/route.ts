@@ -6,13 +6,7 @@ import type { CampProfile } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const ORDER: Record<CampProfile["status"], number> = {
-  open: 0,
-  unknown: 1,
-  preparing: 2,
-  unopened: 3,
-};
-
+/** 포털 목록 순서 그대로 돌려준다. 앱이 상태를 매겨 줄을 세우지 않는다. */
 export async function GET() {
   try {
     const camps = await listAllCamps();
@@ -20,22 +14,17 @@ export async function GET() {
       camps.map(async (camp): Promise<CampProfile> => {
         try {
           return await campProfile(camp.id);
-        } catch {
+        } catch (error) {
           return {
             id: camp.id,
             name: camp.name,
             portalId: camp.portalId,
             portalLabel: "",
             window: null,
-            status: "unknown",
-            zoneCount: 0,
-            roomCount: 0,
+            error: error instanceof Error ? error.message : String(error),
           };
         }
       }),
-    );
-    profiles.sort(
-      (a, b) => ORDER[a.status] - ORDER[b.status] || b.roomCount - a.roomCount,
     );
     return NextResponse.json({ camps: profiles });
   } catch (error) {

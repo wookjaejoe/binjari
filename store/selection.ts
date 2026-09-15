@@ -3,15 +3,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { reconcileSelection } from "@/lib/selection";
-
 export type ZoneSelection = { mode: "all" } | { mode: "some"; rooms: string[] };
-
-export type ViewMode = "heat" | "stream" | "matrix";
 
 type State = {
   nights: number;
-  view: ViewMode;
   onlyOpen: boolean;
   /** 체크인 요일 필터. 빈 배열은 제한 없음. 0=일 … 6=토 */
   dows: number[];
@@ -19,25 +14,19 @@ type State = {
   /** campId → zoneNo → 선택 상태. 없는 키는 선택 해제. */
   selection: Record<string, Record<string, ZoneSelection>>;
   expanded: Record<string, boolean>;
-  /** 구역 목록이 도착하면 선택을 채울 캠핑장. compact는 소규모 구역만. */
-  pendingAll: { campId: string; scope: "all" | "compact" }[];
+  /** 구역 목록이 도착하면 구역 전부를 켤 캠핑장 */
+  pendingAll: string[];
 };
 
 type Actions = {
   setNights: (nights: number) => void;
-  setView: (view: ViewMode) => void;
   setOnlyOpen: (onlyOpen: boolean) => void;
   setDows: (dows: number[]) => void;
   setAutoRefresh: (autoRefresh: boolean) => void;
   toggleExpanded: (key: string) => void;
   setCamp: (campId: string, zoneNos: string[], on: boolean) => void;
-  requestCampAll: (campId: string, scope?: "all" | "compact") => void;
+  requestCampAll: (campId: string) => void;
   resolvePendingAll: (campId: string, zoneNos: string[]) => void;
-  /**
-   * 저장된 선택을 현재 조회 가능한 것만 남기고 정리한다.
-   * valid에 없는 캠핑장은 제거, "unknown"은 아직 모르니 유지.
-   */
-  reconcile: (valid: Record<string, string[] | "unknown">) => void;
   setZone: (campId: string, zoneNo: string, on: boolean) => void;
   setRoom: (
     campId: string,
@@ -60,7 +49,6 @@ export const useSelection = create<State & Actions>()(
   persist(
     (set, get) => ({
       nights: 1,
-      view: "heat",
       onlyOpen: false,
       dows: [],
       autoRefresh: true,
@@ -69,7 +57,6 @@ export const useSelection = create<State & Actions>()(
       pendingAll: [],
 
       setNights: (nights) => set({ nights }),
-      setView: (view) => set({ view }),
       setOnlyOpen: (onlyOpen) => set({ onlyOpen }),
       setDows: (dows) =>
         set({ dows: dows.length === 7 ? [] : [...dows].sort((a, b) => a - b) }),
@@ -90,23 +77,19 @@ export const useSelection = create<State & Actions>()(
           return { selection: next };
         }),
 
-      requestCampAll: (campId, scope = "all") =>
+      requestCampAll: (campId) =>
         set((s) => ({
-          pendingAll: s.pendingAll.some((p) => p.campId === campId)
+          pendingAll: s.pendingAll.includes(campId)
             ? s.pendingAll
-            : [...s.pendingAll, { campId, scope }],
-          expanded:
-            scope === "all" ? { ...s.expanded, [campId]: true } : s.expanded,
+            : [...s.pendingAll, campId],
         })),
 
+      // 구역이 하나도 안 왔으면 대기를 유지한다. 전 날짜 실패 같은 일시적 상황에서
+      // 요청을 버리면 사용자가 켠 캠핑장이 조용히 사라진다.
       resolvePendingAll: (campId, zoneNos) => {
         const state = get();
-        if (!state.pendingAll.some((p) => p.campId === campId)) return;
-        const pendingAll = state.pendingAll.filter((p) => p.campId !== campId);
-        if (!zoneNos.length) {
-          set({ pendingAll });
-          return;
-        }
+        if (!state.pendingAll.includes(campId) || !zoneNos.length) return;
+        const pendingAll = state.pendingAll.filter((id) => id !== campId);
         set({
           pendingAll,
           selection: {
@@ -116,13 +99,6 @@ export const useSelection = create<State & Actions>()(
             ),
           },
         });
-      },
-
-      reconcile: (valid) => {
-        const next = reconcileSelection(get().selection, valid);
-        // set은 빈 partial이어도 새 상태 객체를 만들어 구독자를 깨운다.
-        // 정리할 게 없으면 아예 호출하지 않아야 렌더 루프가 생기지 않는다.
-        if (next) set({ selection: next });
       },
 
       setZone: (campId, zoneNo, on) =>
@@ -173,15 +149,14 @@ export const useSelection = create<State & Actions>()(
     }),
     {
       name: "binjari-selection",
-      version: 3,
+      // 4: 뷰가 하나가 되면서 view 필드를 버린다.
+      version: 4,
       migrate: (persisted, version): Persisted => {
         const old = (persisted ?? {}) as Partial<Persisted> & {
           weekendOnly?: boolean;
         };
-        const views: ViewMode[] = ["heat", "stream", "matrix"];
         return {
           nights: old.nights ?? 1,
-          view: old.view && views.includes(old.view) ? old.view : "heat",
           onlyOpen: old.onlyOpen ?? false,
           dows: old.dows ?? (version < 3 && old.weekendOnly ? [5, 6] : []),
           autoRefresh: old.autoRefresh ?? true,
@@ -191,7 +166,6 @@ export const useSelection = create<State & Actions>()(
       },
       partialize: (state) => ({
         nights: state.nights,
-        view: state.view,
         onlyOpen: state.onlyOpen,
         dows: state.dows,
         autoRefresh: state.autoRefresh,

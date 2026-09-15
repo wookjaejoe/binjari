@@ -14,10 +14,7 @@ const camp = {
   name: "봉수대오토캠핑장",
   portalId: "gwgs",
   portalLabel: "고성군",
-  window: { start: "2026-09-02", end: "2026-09-05", maxStay: 7 },
-  status: "open" as const,
-  zoneCount: 2,
-  roomCount: 8,
+  window: { start: "2026-09-02", end: "2026-09-05", maxStay: 3, minStay: 1 },
 };
 
 function bundle(overrides: Partial<CampData> = {}): CampData {
@@ -28,8 +25,8 @@ function bundle(overrides: Partial<CampData> = {}): CampData {
       campName: camp.name,
       nights: 1,
       window: camp.window,
-      tooManyNights: false,
-      dates: ["2026-09-02", "2026-09-03", "2026-09-04"],
+      // 09-05 는 물었지만 답을 못 받은 날
+      dates: ["2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05"],
       zones: [
         {
           no: "27",
@@ -95,7 +92,8 @@ function bundle(overrides: Partial<CampData> = {}): CampData {
         "2026-09-02": ["477", "486"],
         "2026-09-04": ["477", "485", "486"],
       },
-      zonesWithoutCatalog: ["10"],
+      // 27번 구역은 09-03 객실 조회에 실패했다
+      failed: { "27": ["2026-09-03"] },
       generatedAt: "2026-09-02T12:00:00.000Z",
     },
     ...overrides,
@@ -107,11 +105,31 @@ const all: Record<string, Record<string, ZoneSelection>> = {
 };
 
 describe("dateColumns", () => {
-  it("스캔에 성공한 날짜만 정렬해 돌려준다", () => {
+  it("물어본 날짜 전부를 정렬해 돌려준다 — 실패한 날도 열이 된다", () => {
     expect(dateColumns([bundle()])).toEqual([
       "2026-09-02",
       "2026-09-03",
       "2026-09-04",
+      "2026-09-05",
+    ]);
+  });
+
+  it("여러 캠핑장의 날짜는 합집합이다", () => {
+    const other = bundle({
+      camp: { ...camp, id: "gwgs:song" },
+      zoneScan: {
+        ...bundle().zoneScan!,
+        campId: "gwgs:song",
+        dates: ["2026-09-04", "2026-09-06"],
+        failedDates: [],
+      },
+    });
+    expect(dateColumns([bundle(), other])).toEqual([
+      "2026-09-02",
+      "2026-09-03",
+      "2026-09-04",
+      "2026-09-05",
+      "2026-09-06",
     ]);
   });
 });
@@ -135,7 +153,7 @@ describe("buildRows", () => {
     expect(buildRows([noScan], stale, {})).toEqual([]);
   });
 
-  it("스캔에 없는 구역이 선택에 남아 있어도 행을 만들지 않는다", () => {
+  it("스캔에 없는 구역이 선택에 남아 있어도 행만 안 만들 뿐 선택은 건드리지 않는다", () => {
     const stale = {
       [camp.id]: {
         "27": { mode: "all" } as ZoneSelection,
@@ -145,6 +163,7 @@ describe("buildRows", () => {
     expect(buildRows([bundle()], stale, {}).map((row) => row.label)).toEqual([
       "카라반6인특실",
     ]);
+    expect(stale[camp.id]["999"]).toEqual({ mode: "all" });
   });
 
   it("펼친 구역은 선택된 객실을 행으로 펼친다", () => {
@@ -167,7 +186,6 @@ describe("buildRows", () => {
       "카라반6인특실",
       "카라반(특)6-3",
     ]);
-    expect(rows[0].kind === "zone" && rows[0].capacity).toBe(1);
     expect(rows[0].kind === "zone" && rows[0].partial).toBe(true);
   });
 });
@@ -182,55 +200,100 @@ describe("evaluate", () => {
     (row) => row.kind === "room" && row.roomNo === "485",
   )!;
 
-  it("구역 전체 선택이면 구역 잔여 수를 쓴다", () => {
-    expect(evaluate(zoneRow, "2026-09-02", data, all)).toMatchObject({
+  it("구역 전체 선택이면 구역 잔여가 있을 때 있음이다. 수와 금액은 포털 값 그대로", () => {
+    expect(evaluate(zoneRow, "2026-09-02", data, all)).toEqual({
       state: "open",
       count: 3,
-      capacity: 6,
       amount: 140000,
     });
   });
 
-  it("잔여가 없으면 마감이다", () => {
-    expect(evaluate(zoneRow, "2026-09-03", data, all).state).toBe("full");
+  it("포털이 0 을 주면 없음이다", () => {
+    expect(evaluate(zoneRow, "2026-09-03", data, all).state).toBe("none");
   });
 
-  it("스캔이 실패한 날짜는 조회 불가로 구분한다", () => {
+  it("구역 조회에 실패한 날짜는 모름이다", () => {
     expect(evaluate(zoneRow, "2026-09-05", data, all).state).toBe("unknown");
   });
 
-  it("예약 기간 밖은 기간 아님으로 구분한다", () => {
-    expect(evaluate(zoneRow, "2026-10-01", data, all).state).toBe("outside");
+  it("예약 기간 밖은 없음이다 — 포털은 기간 아님과 없음을 구분하지 않는다", () => {
+    expect(evaluate(zoneRow, "2026-10-01", data, all).state).toBe("none");
   });
 
-  it("객실 행은 그 객실의 가용 여부만 본다", () => {
-    expect(evaluate(roomRow, "2026-09-02", data, all).state).toBe("full");
+  it("다른 캠핑장 기간이라 이 캠핑장이 묻지 않은 날짜도 없음이다", () => {
+    const other = bundle({
+      camp: { ...camp, id: "gwgs:song" },
+      zoneScan: {
+        ...bundle().zoneScan!,
+        campId: "gwgs:song",
+        dates: ["2026-09-06"],
+        failedDates: [],
+      },
+    });
+    const both = [bundle(), other];
+    expect(evaluate(zoneRow, "2026-09-06", both, all).state).toBe("none");
+  });
+
+  it("구역 스캔이 아직 없으면 모름이다", () => {
+    const noScan = bundle({ zoneScan: undefined });
+    expect(evaluate(zoneRow, "2026-09-02", [noScan], all).state).toBe("unknown");
+  });
+
+  it("예약 기간 조회에 실패한 캠핑장은 전 날짜가 모름이다", () => {
+    const noWindow = bundle({
+      camp: { ...camp, window: null, error: "HTTP 502" },
+      zoneScan: { ...bundle().zoneScan!, window: null, dates: [], counts: {}, amounts: {} },
+    });
+    expect(evaluate(zoneRow, "2026-09-02", [noWindow], all).state).toBe("unknown");
+  });
+
+  it("객실 행은 그 객실이 열린 목록에 있는지만 본다", () => {
+    expect(evaluate(roomRow, "2026-09-02", data, all).state).toBe("none");
     expect(evaluate(roomRow, "2026-09-04", data, all).state).toBe("open");
   });
 
-  it("일부 선택은 선택한 객실 중 가능한 수만 센다", () => {
+  it("객실 조회에 실패한 날짜는 객실 행이 모름이다", () => {
+    expect(evaluate(roomRow, "2026-09-03", data, all).state).toBe("unknown");
+  });
+
+  it("구역 조회가 실패한 날짜라도 객실 응답이 있으면 객실 행은 그 값을 쓴다", () => {
+    const base = bundle();
+    const withRooms = bundle({
+      roomScan: {
+        ...base.roomScan!,
+        available: { ...base.roomScan!.available, "2026-09-05": ["485"] },
+      },
+    });
+    expect(evaluate(roomRow, "2026-09-05", [withRooms], all).state).toBe("open");
+    expect(evaluate(zoneRow, "2026-09-05", [withRooms], all).state).toBe("unknown");
+  });
+
+  it("객실 데이터가 아직 없으면 객실 행은 모름이다", () => {
+    const noRooms = bundle({ roomScan: undefined });
+    expect(evaluate(roomRow, "2026-09-02", [noRooms], all).state).toBe("unknown");
+  });
+
+  it("일부 선택은 선택한 객실 중 열린 것이 하나라도 있으면 있음이다", () => {
     const partial = {
       [camp.id]: {
         "27": { mode: "some", rooms: ["485", "486"] } as ZoneSelection,
       },
     };
     const partialRows = buildRows(data, partial, {});
-    expect(evaluate(partialRows[0], "2026-09-02", data, partial)).toMatchObject(
-      {
-        state: "open",
-        count: 1,
-        capacity: 2,
-      },
-    );
+    expect(evaluate(partialRows[0], "2026-09-02", data, partial)).toEqual({
+      state: "open",
+      count: 1,
+      amount: 140000,
+    });
   });
 
-  it("최대 숙박일수를 넘긴 캠핑장은 전 기간이 기간 아님이다", () => {
-    const blocked = bundle({
-      zoneScan: { ...bundle().zoneScan!, tooManyNights: true, dates: [] },
-    });
-    const blockedRows = buildRows([blocked], all, {});
-    expect(evaluate(blockedRows[0], "2026-09-02", [blocked], all).state).toBe(
-      "outside",
+  it("일부 선택인데 객실 조회에 실패한 날짜는 모름이다", () => {
+    const partial = {
+      [camp.id]: { "27": { mode: "some", rooms: ["485"] } as ZoneSelection },
+    };
+    const partialRows = buildRows(data, partial, {});
+    expect(evaluate(partialRows[0], "2026-09-03", data, partial).state).toBe(
+      "unknown",
     );
   });
 
@@ -247,40 +310,32 @@ describe("evaluate", () => {
 });
 
 describe("summarizeDays", () => {
-  it("가능한 구역 수·동수·최저가를 집계한다", () => {
-    const data = [bundle()];
-    const rows = buildRows(data, all, {});
-    const [first, second, third] = summarizeDays(
-      ["2026-09-02", "2026-09-03", "2026-09-04"],
-      rows,
-      data,
-      all,
-    );
+  const data = [bundle()];
+  const rows = buildRows(data, all, {});
 
-    expect(first).toMatchObject({
-      openRows: 1,
-      openUnits: 3,
-      minAmount: 140000,
-    });
-    expect(second).toMatchObject({
-      openRows: 1,
-      openUnits: 2,
-      minAmount: 80000,
-    });
-    expect(third).toMatchObject({
-      openRows: 2,
-      openUnits: 7,
-      minAmount: 80000,
-    });
-    expect(third.activeRows).toBe(2);
+  it("열린 행이 하나라도 있으면 그 날은 있음이다", () => {
+    expect(
+      summarizeDays(["2026-09-02", "2026-09-03", "2026-09-04"], rows, data, all),
+    ).toEqual([
+      { date: "2026-09-02", open: true, unknown: false },
+      { date: "2026-09-03", open: true, unknown: false },
+      { date: "2026-09-04", open: true, unknown: false },
+    ]);
   });
 
-  it("예약 기간 밖 날짜는 활성 구역이 없다", () => {
-    const data = [bundle()];
-    const rows = buildRows(data, all, {});
-    expect(summarizeDays(["2026-11-01"], rows, data, all)[0]).toMatchObject({
-      openRows: 0,
-      activeRows: 0,
+  it("모름인 행이 있으면 모름 표시가 켜진다", () => {
+    expect(summarizeDays(["2026-09-05"], rows, data, all)[0]).toEqual({
+      date: "2026-09-05",
+      open: false,
+      unknown: true,
+    });
+  });
+
+  it("예약 기간 밖 날짜는 없음이다", () => {
+    expect(summarizeDays(["2026-11-01"], rows, data, all)[0]).toEqual({
+      date: "2026-11-01",
+      open: false,
+      unknown: false,
     });
   });
 });

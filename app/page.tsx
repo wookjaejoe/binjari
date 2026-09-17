@@ -17,6 +17,7 @@ import { Sheet } from "@/components/Sheet";
 import { TargetPicker } from "@/components/TargetPicker";
 import { Empty, Skeleton, Spinner, Switch, cx } from "@/components/ui";
 import { DateMatrix } from "@/components/views/DateMatrix";
+import { ZoneCards } from "@/components/ZoneCards";
 import {
   buildRows,
   dateColumns,
@@ -327,6 +328,18 @@ export default function Page() {
           가능 <strong className="font-semibold text-fg">{openCount}</strong>일
         </span>
       </div>
+
+      {!empty && (
+        <div className="px-4 pb-3">
+          <ZoneCards
+            rows={rows}
+            dates={dates}
+            data={data}
+            selection={selection}
+            onPick={(campId, date) => setSelected({ campId, date })}
+          />
+        </div>
+      )}
 
       <div className="mx-3 overflow-hidden rounded-md border border-line bg-surface">
         {empty?.loading && (

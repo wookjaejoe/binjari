@@ -2,8 +2,13 @@ import { addDays, format, parse } from "date-fns";
 
 export const DOW = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
+/**
+ * 포털이 한국 시간으로 돌아가므로 "오늘"도 한국 시간이다. 서버가 UTC 인 곳(Vercel)에
+ * 올리면 로컬 시간으로는 한국의 자정~아침 사이에 어제가 오늘로 잡힌다.
+ * en-CA 로케일은 yyyy-MM-dd 로 찍힌다.
+ */
 export function todayISO(): string {
-  return format(new Date(), "yyyy-MM-dd");
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
 }
 
 export function isoToCompact(iso: string): string {

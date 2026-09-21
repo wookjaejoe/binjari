@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { dropScanCache, scanZones } from "@/lib/scan";
 
 export const dynamic = "force-dynamic";
+// 스캔은 날짜 수만큼 포털을 부른다. 서버리스 기본 한도(10초)로는 콜드 스타트 때 모자란다.
+export const maxDuration = 60;
 
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;

@@ -370,6 +370,7 @@ export default function Page() {
             data={data}
             selection={selection}
             selected={selected}
+            firstOpenDate={openDates[0] ?? null}
             onPick={(campId, date) => setSelected({ campId, date })}
           />
         )}

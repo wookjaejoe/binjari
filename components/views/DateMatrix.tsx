@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useEffect, useRef } from "react";
 
 import { cx } from "@/components/ui";
 import { evaluate, type CampData, type Row } from "@/lib/availability";
@@ -13,6 +13,8 @@ type Props = {
   data: CampData[];
   selection: Record<string, Record<string, ZoneSelection>>;
   selected: { campId: string | null; date: string } | null;
+  /** 처음 열린 날. 표를 그 열까지 밀어 둔다. */
+  firstOpenDate: string | null;
   onPick: (campId: string, date: string) => void;
 };
 
@@ -41,9 +43,27 @@ export function DateMatrix({
   data,
   selection,
   selected,
+  firstOpenDate,
   onPick,
 }: Props) {
   const today = todayISO();
+  const rail = useRef<HTMLDivElement>(null);
+  const scrolledTo = useRef<string | null>(null);
+
+  // 조회 기간이 두 달이면 열이 60개가 넘는다. 오늘부터 한참 뒤에야 자리가
+  // 열리는 조건에서는 첫 화면이 빈 칸으로만 차 있어 아무것도 없는 것처럼 보인다.
+  // 처음 열린 열까지 밀어 둔다. 같은 날짜로는 다시 밀지 않는다 — 3분마다 오는
+  // 갱신이 사용자가 잡아 둔 위치를 빼앗으면 안 된다.
+  useEffect(() => {
+    if (!firstOpenDate || scrolledTo.current === firstOpenDate) return;
+    const box = rail.current;
+    const cell = box?.querySelector<HTMLElement>("[data-first-open]");
+    if (!box || !cell) return;
+    scrolledTo.current = firstOpenDate;
+    const label = box.querySelector<HTMLElement>("thead th");
+    const offset = cell.getBoundingClientRect().left - box.getBoundingClientRect().left;
+    box.scrollLeft += offset - (label?.offsetWidth ?? 0);
+  }, [firstOpenDate]);
 
   const groups: { campName: string; rows: Row[] }[] = [];
   for (const row of rows) {
@@ -61,7 +81,7 @@ export function DateMatrix({
   }
 
   return (
-    <div className="rail">
+    <div ref={rail} className="rail">
       <table className="border-separate border-spacing-0 text-xs">
         <thead>
           <tr>
@@ -96,6 +116,7 @@ export function DateMatrix({
                     date === today && "font-semibold",
                   )}
                   style={{ width: COL, minWidth: COL }}
+                  data-first-open={date === firstOpenDate || undefined}
                 >
                   <span className="block text-2xs leading-tight">
                     {Number(date.slice(8, 10))}

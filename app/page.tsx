@@ -45,13 +45,20 @@ type EmptyState =
       action?: [string, SheetKind];
     };
 
+/**
+ * 조건 버튼. `changed`는 기본값에서 벗어난 조건이라는 뜻이다 — 라벨에 이미
+ * `7박`이라고 적혀 있어도 기본값과 똑같이 생기면 걸려 있는 줄 모른다.
+ * 결과가 비어 보일 때 먼저 의심할 곳이 여기다.
+ */
 function FilterButton({
   children,
   primary,
+  changed,
   onClick,
 }: {
   children: ReactNode;
   primary?: boolean;
+  changed?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -62,9 +69,10 @@ function FilterButton({
         "flex min-w-0 items-center gap-1 rounded-full border px-3 py-2 text-xs whitespace-nowrap",
         primary
           ? "flex-1 justify-between border-line bg-surface font-medium text-fg"
-          : "shrink-0 border-line text-muted",
+          : cx("shrink-0 border-line", changed ? "font-medium text-fg" : "text-muted"),
       )}
     >
+      {changed && <span className="size-1.5 shrink-0 rounded-full bg-accent" aria-hidden />}
       <span className="truncate">{children}</span>
       <svg viewBox="0 0 10 10" className="size-2.5 shrink-0 opacity-60" aria-hidden>
         <path
@@ -308,8 +316,10 @@ export default function Page() {
           <FilterButton primary onClick={() => setSheet("target")}>
             {targetSummary}
           </FilterButton>
-          <FilterButton onClick={() => setSheet("nights")}>{nights}박</FilterButton>
-          <FilterButton onClick={() => setSheet("dows")}>
+          <FilterButton changed={nights !== 1} onClick={() => setSheet("nights")}>
+            {nights}박
+          </FilterButton>
+          <FilterButton changed={dows.length > 0} onClick={() => setSheet("dows")}>
             {dowLabel(dows)}
           </FilterButton>
         </div>

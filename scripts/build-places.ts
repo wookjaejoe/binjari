@@ -164,6 +164,7 @@ const GOCAMPING_IDS: Record<string, number> = {
   "gtdc:yeongok": 2185,
   "moonhwain:yangsan-hwangsan": 3578,
   "suseong:jinbatgol": 7560,
+  "asanfmc:gokgyocheon": 1993,
 };
 
 const OVERPASS = [

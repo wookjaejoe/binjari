@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { parseAsan } from "@/lib/providers/asanfmc";
 import { parseGmuc } from "@/lib/providers/gmuc";
 import { remaining } from "@/lib/providers/gtdc";
 import { parseMakeTicket } from "@/lib/providers/maketicket";
@@ -112,5 +113,26 @@ describe("parseSuseong (대구 진밭골)", () => {
 
   it("날마다 구역별 남은 수(data-origin-value)를 읽고 날짜를 두 자리로 편다", () => {
     expect(parseSuseong(html)).toEqual({ "2026-10-01": { "카라반": 2, "데크": 0 } });
+  });
+});
+
+describe("parseAsan (아산 곡교천)", () => {
+  const cell = (date: string, state: string) =>
+    `<!-- 2026-10-18 < ${date} = n --> <span class="day"> <span class="sType ${state}"></span></span>`;
+  const html = `
+    <div class="titTd sticky"> 사이트면 </div>
+    <div class="titTd"> A1(퍼컬러사이트) </div> <div class="titTd"> B1 </div>
+    <div class="dayGroup sticky day31"> <span class="day">01</span> </div>
+    <div class="dayGroup day31">${cell("2026-10-01", "one")}${cell("2026-10-05", "four")}${cell("2026-10-06", "two")}</div>
+    <div class="dayGroup day31">${cell("2026-10-01", "three")}${cell("2026-10-05", "four")}${cell("2026-10-06", "one")}</div>`;
+
+  it("사이트 × 날짜를 읽어 예약가능만 빈 것으로 두고, 전부 휴관인 날은 뺀다", () => {
+    expect(parseAsan(html)).toEqual({
+      sites: ["A1(퍼컬러사이트)", "B1"],
+      days: {
+        "2026-10-01": { "A1(퍼컬러사이트)": true, B1: false },
+        "2026-10-06": { "A1(퍼컬러사이트)": false, B1: true },
+      },
+    });
   });
 });

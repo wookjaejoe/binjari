@@ -8,7 +8,8 @@ export type ProviderId =
   | "rsvasp"
   | "gmuc"
   | "maketicket"
-  | "gtdc";
+  | "gtdc"
+  | "suseong";
 
 export type Portal = {
   id: string;

@@ -548,6 +548,13 @@
     "sido": "대전",
     "source": "gocamping:1570"
   },
+  "suseong:jinbatgol": {
+    "lat": 35.8169547,
+    "lng": 128.6602697,
+    "address": "대구광역시 수성구 진밭길 112 (범물동)",
+    "sido": "대구",
+    "source": "gocamping:7560"
+  },
   "xticket:dalseo-byeolbit": {
     "lat": 35.8232403786948,
     "lng": 128.557039480382,

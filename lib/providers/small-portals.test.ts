@@ -4,6 +4,7 @@ import { parseGmuc } from "@/lib/providers/gmuc";
 import { remaining } from "@/lib/providers/gtdc";
 import { parseMakeTicket } from "@/lib/providers/maketicket";
 import { parseActDate } from "@/lib/providers/moonhwain";
+import { parseSuseong } from "@/lib/providers/suseong";
 import { parseYesanCalendar } from "@/lib/providers/yesan";
 
 describe("parseActDate (문화인)", () => {
@@ -100,5 +101,16 @@ describe("remaining (강릉 연곡)", () => {
 
   it("block 이 비면(빈 배열) 예약 받는 날이 없다", () => {
     expect(remaining(zones, [])).toEqual({});
+  });
+});
+
+describe("parseSuseong (대구 진밭골)", () => {
+  const html = `
+    <td > <ul class="state_w"> </ul> </td>
+    <td > <ul class="state_w"> 1 <li><p>카라반</p> <div> <span class="green" data-id="2026-10-1" data-origin-value="2"> 2</span></div></li>
+      <li><p>데크</p> <div> <span class="red" style="cursor: pointer; pointer-events: auto;" data-id="2026-10-1" data-origin-value="0"> 0</span></div></li> </ul> </td>`;
+
+  it("날마다 구역별 남은 수(data-origin-value)를 읽고 날짜를 두 자리로 편다", () => {
+    expect(parseSuseong(html)).toEqual({ "2026-10-01": { "카라반": 2, "데크": 0 } });
   });
 });

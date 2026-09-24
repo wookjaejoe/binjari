@@ -16,6 +16,7 @@
 - 광명도시공사 도덕산캠핑장(`www.gmuc.co.kr`)
 - 스마틱스 Forest MakeTicket(`forest.maketicket.co.kr`) — 삼척 장호비치, 울진 염전해변
 - 강릉관광개발공사 연곡해변 솔향기캠핑장(`camping.gtdc.or.kr`)
+- 대구 수성구 진밭골야영장(`www.suseong.kr/camping`)
 
 캠핑장은 포털에서 자동으로 발견하고, 캠핑장 · 구역 · 객실 단위로 조회한다. 예약 시스템마다
 `CampProvider` 어댑터가 하나씩 있다 — 아래 [캠핑장 · 포털 추가](#캠핑장--포털-추가) 참고.
@@ -96,7 +97,7 @@ Xticket(2026-09-24)은 캠핑장마다 `shopEncode` 하나로 갈리고, 세션 
 - POST에 `Origin` 헤더가 없으면 빈 `{}`가 온다. 같은 출처 확인이라 브라우저가 보내는 값을 보낸다.
 - 숙박이 아닌 상품(승촌의 축구장)은 캠핑장 설정의 `skip`으로 뺀다.
 
-문화인·예산 예당·광명 도덕산·MakeTicket·강릉 연곡은 **1박 달력만** 공개한다(연곡은 여러 박을
+문화인·예산 예당·광명 도덕산·MakeTicket·강릉 연곡·대구 진밭골은 **1박 달력만** 공개한다(연곡은 여러 박을
 사이트 배치도에서 구역 × 날짜마다 따로 물어야 해서 묻지 않는다).
 
 - 문화인은 예약 화면에 기간 전체의 날짜별 남은 수가 숨은 값(`actDate`)으로 박혀 있다. 사이트
@@ -112,6 +113,9 @@ Xticket(2026-09-24)은 캠핑장마다 `shopEncode` 하나로 갈리고, 세션 
   달력의 날마다 구역별로 **찬** 수(`actMode=month_state`의 `block`). 남은 수는 둘의 차이이고,
   block 에 없는 날은 예약을 받지 않는 날이다. 화면 스크립트와 같은 계산이다. 구역이 언어별로
   등록돼 있어 `Accept-Language`가 한국어가 아니면 빈 배열이 온다(Node fetch 기본값은 `*`).
+- 대구 진밭골은 "예약현황" 달력(`reservationState.do`)에 날마다 구역(카라반·오토캠핑·데크)별 남은
+  수가 있다. 이번 달과 다음 달만 연다. 화면이 오후 5시가 지나면 오늘 칸을 0으로 바꾸는데, 같은
+  규칙을 따른다.
 - 모두 여러 박을 가볍게 물을 길이 없다. 2박 이상은 없음이 아니라 **모름**이다. 어댑터가
   `unanswered`로 답하면 스캔은 구역 목록은 쓰고(행은 남는다) 그 날짜를 모름으로 둔다.
 
@@ -186,6 +190,7 @@ lib/providers/rsvasp.ts      옛 ASP 예약 화면 어댑터 — 구역 × 달 �
 lib/providers/gmuc.ts        광명 도덕산 어댑터 — 두 달치 예약 현황 한 장
 lib/providers/maketicket.ts  스마틱스 MakeTicket 어댑터 — 달마다 날짜 × 구역 남은 수
 lib/providers/gtdc.ts        강릉 연곡 어댑터 — 구역 정원과 달마다 찬 수
+lib/providers/suseong.ts     대구 진밭골 어댑터 — 달마다 날짜 × 구역 남은 수
 lib/registry.ts              포털 등록부 · 캠핑장 자동 발견
 lib/places.json · places.ts  캠핑장 좌표 · 주소 · 시도 (scripts/build-places.ts 가 만든다)
 lib/scan.ts                  기간 전체 스캔 오케스트레이션 (동시성 제한 + TTL 캐시)

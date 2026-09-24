@@ -423,8 +423,7 @@ export default function Page() {
             </div>
 
             <p className="px-5 text-center text-xs leading-relaxed text-subtle">
-              고성군 공공캠핑장과 국립공원 예약 사이트의 공개 정보예요. 예약과 결제는 원
-              사이트에서 해요.
+              캠핑장마다 원래 예약 사이트의 공개 정보예요. 예약과 결제는 원 사이트에서 해요.
             </p>
           </div>
         </div>

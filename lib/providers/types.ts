@@ -1,4 +1,4 @@
-export type ProviderId = "pubcamping" | "knps" | "knpsShelter";
+export type ProviderId = "pubcamping" | "knps" | "knpsShelter" | "xticket";
 
 export type Portal = {
   id: string;

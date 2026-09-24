@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parseAsan } from "@/lib/providers/asanfmc";
+import { parseDaejeo } from "@/lib/providers/daejeo";
 import { parseDptoCalendar, parseDptoMap } from "@/lib/providers/dpto";
 import { parseGmuc } from "@/lib/providers/gmuc";
 import { parseHuyangCalendar, parseHuyangDay } from "@/lib/providers/huyang";
@@ -201,5 +202,21 @@ describe("당진도시공사", () => {
       <!-- <li><a onclick="siteInfoLoad('2026-10-02', '왜목7', this)" href="javascript:void(0);">왜목-7</a></li> -->
     </ul>`;
     expect(parseDptoMap(html)).toEqual({ "C-3": true, "D-4": false });
+  });
+});
+
+describe("parseDaejeo (부산 대저)", () => {
+  const site = (state: string, id: string, zone: string, name: string) =>
+    `<a href="" class="cbtn area_${zone.toLowerCase()} cbtn_${name} ${state} tooltip ">${name}
+      <input type="hidden" class="siteid" value="${id}"> <input type="hidden" class="sitetype" value="${zone}">
+      <input type="hidden" class="sitename" value="${name}"> <input type="hidden" class="site_price" value="23000"> </a>`;
+
+  it("사이트마다 구역과 상태를 읽고, 예약가능(cbtn_on)만 빈 것으로 본다", () => {
+    const html = site("cbtn_on", "212", "A", "01") + site("cbtn_Pcancel", "214", "A", "03") + site("cbtn_Pcomplete", "300", "D", "12");
+    expect(parseDaejeo(html)).toEqual([
+      { id: "212", zone: "A", name: "A-01", open: true },
+      { id: "214", zone: "A", name: "A-03", open: false },
+      { id: "300", zone: "D", name: "D-12", open: false },
+    ]);
   });
 });

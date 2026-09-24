@@ -6,6 +6,13 @@
     "sido": "충남",
     "source": "gocamping:1993"
   },
+  "daejeo:daejeo": {
+    "lat": 35.215809,
+    "lng": 128.9718533,
+    "address": "부산광역시 강서구 대저1동 1-5번지",
+    "sido": "부산",
+    "source": "gocamping:769"
+  },
   "dpto:haeyang": {
     "lat": 36.8953511,
     "lng": 126.8188355,

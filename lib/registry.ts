@@ -1,4 +1,5 @@
 import { asanfmc } from "@/lib/providers/asanfmc";
+import { daejeo } from "@/lib/providers/daejeo";
 import { dpto } from "@/lib/providers/dpto";
 import { gmuc } from "@/lib/providers/gmuc";
 import { gtdc } from "@/lib/providers/gtdc";
@@ -113,6 +114,12 @@ export const PORTALS: Portal[] = [
     label: "지자체 캠핑장",
     provider: "dpto",
   },
+  {
+    id: "daejeo",
+    host: "www.daejeocamping.com",
+    label: "지자체 캠핑장",
+    provider: "daejeo",
+  },
 ];
 
 const PROVIDERS: Record<ProviderId, CampProvider> = {
@@ -131,6 +138,7 @@ const PROVIDERS: Record<ProviderId, CampProvider> = {
   huyang,
   ulju,
   dpto,
+  daejeo,
 };
 
 /** 자동 발견 목록에서 뺄 캠핑장, 또는 표시 이름을 다듬을 곳. */

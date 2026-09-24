@@ -184,6 +184,10 @@ const GOCAMPING_IDS: Record<string, number> = {
   "dssiseol:river": 549,
   "yeongdo:marino": 100620,
   "ghss:hamheo": 3436,
+  "xticket:najeong": 100274,
+  "xticket:pyeongsari": 3232,
+  "xticket:gyeongju-oryu": 2285,
+  "xticket:haman-gangnaru": 138,
 };
 
 const OVERPASS = [

@@ -69,6 +69,27 @@ export const XTICKET_SHOPS: { slug: string; name: string; encode: string; skip?:
     encode: "a1535c44b7b5b3ab38fd902f0c58f8600f1a57e45999ac4b1a7b8c321f1d2df5",
     skip: ["축구장"],
   },
+  {
+    slug: "najeong",
+    name: "경주 나정고운모래해변 오토캠핑장",
+    encode: "08f2d6ac872d55a829cd62de5a910ff0922eeb57506d4ddbe021224fce47d006",
+  },
+  {
+    slug: "pyeongsari",
+    name: "하동 평사리공원 야영장",
+    encode: "9a70806d9ece939f91136278845d34c118219969c03be87baf58f1c3f6733b31",
+  },
+  {
+    slug: "gyeongju-oryu",
+    name: "경주 오류캠핑장",
+    encode: "1d452e80e849139a2c76ff348c1b3f1d5a491d6af95823ad850515d67901dd92",
+  },
+  {
+    // 고캠핑 링크에는 shopEncode 가 없다. 함안군 관광 안내 페이지의 예약 링크에서 찾았다.
+    slug: "haman-gangnaru",
+    name: "함안 강나루오토캠핑장",
+    encode: "0ca2dbc468034c0554a59d50a00e1fa0d273547243cd913e8ffc7fe403c13729",
+  },
 ];
 
 const encodeOf = (camp: CampRef) => {

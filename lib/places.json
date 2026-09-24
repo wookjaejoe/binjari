@@ -695,6 +695,34 @@
     "sido": "서울",
     "source": "gocamping:141"
   },
+  "xticket:gyeongju-oryu": {
+    "lat": 35.8218166,
+    "lng": 129.5082435,
+    "address": "경상북도 경주시 감포읍 감포로 382-7",
+    "sido": "경북",
+    "source": "gocamping:2285"
+  },
+  "xticket:haman-gangnaru": {
+    "lat": 35.3930913,
+    "lng": 128.5085477,
+    "address": "경상남도 함안군 칠서면 이룡리 998",
+    "sido": "경남",
+    "source": "gocamping:138"
+  },
+  "xticket:najeong": {
+    "lat": 35.7835746,
+    "lng": 129.4906609,
+    "address": "경상북도 경주시 감포읍 동해안로 1976",
+    "sido": "경북",
+    "source": "gocamping:100274"
+  },
+  "xticket:pyeongsari": {
+    "lat": 35.1381594,
+    "lng": 127.6889294,
+    "address": "경상남도 하동군 악양면 평사리 85-5",
+    "sido": "경남",
+    "source": "gocamping:3232"
+  },
   "xticket:saengrim": {
     "lat": 35.3651886220804,
     "lng": 128.811910126267,

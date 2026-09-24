@@ -98,12 +98,13 @@ export function Check({
   );
 }
 
-export function Spinner({ className }: { className?: string }) {
+export function Spinner({ className, onInk }: { className?: string; onInk?: boolean }) {
   return (
     <span
       aria-hidden
       className={cx(
-        "inline-block size-3.5 animate-spin rounded-full border-2 border-line-strong border-t-accent",
+        "inline-block size-3.5 animate-spin rounded-full border-2",
+        onInk ? "border-on-ink/20 border-t-on-ink" : "border-line-strong border-t-accent",
         className,
       )}
     />

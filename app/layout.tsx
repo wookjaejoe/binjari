@@ -13,7 +13,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   colorScheme: "light",
-  themeColor: "#fbfbfa",
+  // 화면 맨 위가 머리 띠(--ink)라 브라우저 상단 막대도 같은 색으로 잇는다.
+  themeColor: "#1a1a19",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -216,11 +216,11 @@ describe("evaluate", () => {
     expect(evaluate(zoneRow, "2026-09-05", data, all).state).toBe("unknown");
   });
 
-  it("예약 기간 밖은 없음이다 — 포털은 기간 아님과 없음을 구분하지 않는다", () => {
-    expect(evaluate(zoneRow, "2026-10-01", data, all).state).toBe("none");
+  it("예약 기간 밖이라 묻지 않은 날은 없음이 아니라 묻지 않음이다", () => {
+    expect(evaluate(zoneRow, "2026-10-01", data, all).state).toBe("unasked");
   });
 
-  it("다른 캠핑장 기간이라 이 캠핑장이 묻지 않은 날짜도 없음이다", () => {
+  it("다른 캠핑장 기간이라 이 캠핑장이 묻지 않은 날짜도 묻지 않음이다", () => {
     const other = bundle({
       camp: { ...camp, id: "gwgs:song" },
       zoneScan: {
@@ -231,12 +231,29 @@ describe("evaluate", () => {
       },
     });
     const both = [bundle(), other];
-    expect(evaluate(zoneRow, "2026-09-06", both, all).state).toBe("none");
+    expect(evaluate(zoneRow, "2026-09-06", both, all).state).toBe("unasked");
   });
 
   it("구역 스캔이 아직 없으면 모름이다", () => {
     const noScan = bundle({ zoneScan: undefined });
     expect(evaluate(zoneRow, "2026-09-02", [noScan], all).state).toBe("unknown");
+  });
+
+  it("객실 첫 응답을 기다리는 중이면 객실 행은 조회 중이다 — 모름(?)으로 깜빡이면 안 된다", () => {
+    const waiting = bundle({ roomScan: undefined, roomPending: true });
+    expect(evaluate(roomRow, "2026-09-02", [waiting], all).state).toBe("loading");
+  });
+
+  it("객실 첫 응답을 기다리는 중이면 일부 선택 구역도 조회 중이다", () => {
+    const partial = {
+      [camp.id]: { "27": { mode: "some", rooms: ["485"] } as ZoneSelection },
+    };
+    const waiting = bundle({ roomScan: undefined, roomPending: true });
+    const [row] = buildRows([waiting], partial, {});
+    expect(evaluate(row, "2026-09-02", [waiting], partial).state).toBe("loading");
+    // 요약에서는 열림도 모름도 아니다
+    const [day] = summarizeDays(["2026-09-02"], [row], [waiting], partial);
+    expect(day).toEqual({ date: "2026-09-02", open: false, unknown: false });
   });
 
   it("예약 기간 조회에 실패한 캠핑장은 전 날짜가 모름이다", () => {
@@ -331,7 +348,7 @@ describe("summarizeDays", () => {
     });
   });
 
-  it("예약 기간 밖 날짜는 없음이다", () => {
+  it("예약 기간 밖 날짜는 열림도 모름도 아니다", () => {
     expect(summarizeDays(["2026-11-01"], rows, data, all)[0]).toEqual({
       date: "2026-11-01",
       open: false,

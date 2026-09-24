@@ -1,6 +1,6 @@
 "use client";
 
-import { Sheet } from "@/components/Sheet";
+import { Sheet, type SheetAnchor } from "@/components/Sheet";
 import { cx } from "@/components/ui";
 import { DOW } from "@/lib/date";
 
@@ -17,11 +17,13 @@ const NIGHTS = [1, 2, 3, 4, 5, 6, 7];
 export function NightsSheet({
   open,
   nights,
+  anchor,
   onClose,
   onPick,
 }: {
   open: boolean;
   nights: number;
+  anchor?: SheetAnchor | null;
   onClose: () => void;
   onPick: (nights: number) => void;
 }) {
@@ -30,6 +32,7 @@ export function NightsSheet({
       open={open}
       onClose={onClose}
       title="숙박일수"
+      anchor={anchor}
     >
       <ul className="p-2">
         {NIGHTS.map((value) => (
@@ -80,11 +83,13 @@ export function NightsSheet({
 export function DowSheet({
   open,
   dows,
+  anchor,
   onClose,
   onChange,
 }: {
   open: boolean;
   dows: number[];
+  anchor?: SheetAnchor | null;
   onClose: () => void;
   onChange: (dows: number[]) => void;
 }) {
@@ -103,6 +108,7 @@ export function DowSheet({
       open={open}
       onClose={onClose}
       title="체크인 요일"
+      anchor={anchor}
     >
       <div className="p-4">
         <div className="flex gap-1.5">
@@ -155,7 +161,7 @@ export function DowSheet({
         </div>
 
         {active.length === 0 && (
-          <p className="mt-4 text-xs text-warn">
+          <p className="mt-4 text-xs text-error">
             고른 요일이 없어요.
           </p>
         )}

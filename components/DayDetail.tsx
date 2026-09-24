@@ -21,7 +21,7 @@ function BookingButton({
   const { data: target, isPending, error } = useBookingTarget(campId, date, nights);
 
   if (error) {
-    return <p className="text-xs text-warn">예약 링크를 만들지 못했어요. 원 사이트에서 찾아볼 수 있어요.</p>;
+    return <p className="text-xs text-error">예약 링크를 만들지 못했어요. 원 사이트에서 찾아볼 수 있어요.</p>;
   }
 
   return (
@@ -71,8 +71,13 @@ export function DayDetail({
   const zoneRows = rows.filter(
     (row) => row.kind === "zone" && (!campId || row.campId === campId),
   );
+  // 그 날을 묻지 않은 캠핑장(예약 기간 밖)은 뺀다. 넣으면 행마다 "모름"으로 읽힌다.
   const camps = data.filter((entry) =>
-    zoneRows.some((row) => row.campId === entry.camp.id),
+    zoneRows.some(
+      (row) =>
+        row.campId === entry.camp.id &&
+        evaluate(row, date, data, selection).state !== "unasked",
+    ),
   );
 
   const openCamps = camps.filter((entry) =>
@@ -156,7 +161,9 @@ export function DayDetail({
                             ? `${cell.count}면`
                             : cell.state === "none"
                               ? "없음"
-                              : "모름"}
+                              : cell.state === "loading"
+                                ? "조회 중"
+                                : "모름"}
                         </span>
                         {cell.state === "open" && cell.amount != null && (
                           <span className="ml-auto text-xs text-muted num">

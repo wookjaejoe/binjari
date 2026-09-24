@@ -5,6 +5,11 @@ export type CampData = {
   camp: CampProfile;
   zoneScan?: ZoneScan;
   roomScan?: RoomScan;
+  /**
+   * 객실 조회의 첫 응답을 기다리는 중. 객실 스캔이 없을 때 이것이 켜져 있으면 모름이 아니라
+   * 조회 중이다. 구역 쪽에는 두지 않는다 — 구역 스캔이 없으면 행 자체가 안 만들어진다.
+   */
+  roomPending?: boolean;
 };
 
 export type Row =
@@ -33,10 +38,13 @@ export type Row =
 
 /**
  * open     포털이 그 날짜에 열린 자리가 있다고 했다
- * none     포털이 0 을 줬다. 기간 밖도 여기 — 포털은 "기간 아님"과 "없음"을 구분하지 않는다
- * unknown  물어보지 못했거나 답을 못 받았다. none 과 반드시 구분한다
+ * none     포털이 0 을 줬다
+ * unknown  물었는데 답을 못 받았다(조회 실패). none 과 반드시 구분한다
+ * loading  지금 묻는 중이다. 곧 위 셋 중 하나가 된다. unknown 으로 그리면 `?`가 깜빡인다
+ * unasked  이 캠핑장에는 묻지 않은 날이다 — 포털이 준 예약 기간 밖인데, 다른 캠핑장의 기간
+ *          때문에 화면에 열이 생긴 경우다. 묻지 않았으니 없다고 말할 수 없다. 칸을 그리지 않는다
  */
-export type CellState = "open" | "none" | "unknown";
+export type CellState = "open" | "none" | "unknown" | "loading" | "unasked";
 
 /** count·amount 는 상세에서 포털 값을 그대로 보여주기 위한 것. 격자의 판단에는 안 쓴다. */
 export type Cell = {
@@ -46,6 +54,8 @@ export type Cell = {
 };
 
 const UNKNOWN: Cell = { state: "unknown", count: 0, amount: null };
+const LOADING: Cell = { state: "loading", count: 0, amount: null };
+const UNASKED: Cell = { state: "unasked", count: 0, amount: null };
 
 export function selectedRooms(
   selection: ZoneSelection | undefined,
@@ -129,10 +139,14 @@ export function evaluate(
   const roomScan = entry?.roomScan;
   const amount = zoneScan?.amounts[date]?.[row.zoneNo] ?? null;
 
+  // 스캔은 그 캠핑장의 예약 기간 안만 묻는다(dates 에는 실패한 날도 들어 있다). 기간 조회가
+  // 실패해 window 가 없으면 아래에서 전부 모름이 된다.
+  if (zoneScan?.window && !zoneScan.dates.includes(date)) return UNASKED;
+
   // 객실 응답은 구역 응답과 따로 온다. 구역 조회가 실패한 날이라도 객실 응답이
   // 있으면 그 값을 쓴다 — 모름은 객실 쪽이 답을 못 받았을 때만이다.
   if (row.kind === "room") {
-    if (!roomScan) return UNKNOWN;
+    if (!roomScan) return entry?.roomPending ? LOADING : UNKNOWN;
     if (roomScan.failed[row.zoneNo]?.includes(date)) return UNKNOWN;
     const open = (roomScan.available[date] ?? []).includes(row.roomNo);
     return { state: open ? "open" : "none", count: open ? 1 : 0, amount };
@@ -143,15 +157,13 @@ export function evaluate(
 
   const pick = selection[row.campId]?.[row.zoneNo];
   if (pick?.mode === "some") {
-    if (!roomScan) return UNKNOWN;
+    if (!roomScan) return entry?.roomPending ? LOADING : UNKNOWN;
     if (roomScan.failed[row.zoneNo]?.includes(date)) return UNKNOWN;
     const openHere = new Set(roomScan.available[date] ?? []);
     const count = pick.rooms.filter((no) => openHere.has(no)).length;
     return { state: count > 0 ? "open" : "none", count, amount };
   }
 
-  // 이 캠핑장이 묻지 않은 날짜(다른 캠핑장 기간이 열로 온 것)도 none 이다.
-  // 그 날은 물어도 포털이 0 을 준다.
   const count = zoneScan.counts[date]?.[row.zoneNo] ?? 0;
   return { state: count > 0 ? "open" : "none", count, amount };
 }

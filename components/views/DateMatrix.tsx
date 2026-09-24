@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useRef } from "react";
 
 import { cx } from "@/components/ui";
+import { cellTone, dowTone } from "@/components/ZoneCalendars";
 import { evaluate, type CampData, type Row } from "@/lib/availability";
 import { DOW, dowIndex, formatShort, monthKey, todayISO } from "@/lib/date";
 import type { ZoneSelection } from "@/store/selection";
@@ -20,8 +21,11 @@ type Props = {
 
 /** 좌측 라벨 폭. 구역 이름이 한 줄로 들어갈 만큼. */
 const LABEL = "6.5rem";
-/** 날짜 열 — 셀에는 채움 아니면 물음표 하나뿐이므로 좁아도 된다. */
-const COL = "1.625rem";
+/**
+ * 날짜 열. 칸은 이 폭에서 사방 1px 을 뺀 정사각이다 — 칸 사이가 2px 이 된다.
+ * 칸에는 채움 아니면 물음표 하나뿐이므로 좁아도 된다.
+ */
+const COL = "1.75rem";
 
 function selectedCount(pick: ZoneSelection | undefined) {
   return pick?.mode === "some" ? pick.rooms.length : 0;
@@ -34,8 +38,9 @@ function selectedCount(pick: ZoneSelection | undefined) {
  * 밀어넣어야 해서 잘리는데, 정작 셀에 들어가는 것은 채움 하나뿐이라 폭이
  * 낭비된다. 이름은 좌측에서 가로로 쓰고 날짜 열은 좁게 두는 편이 맞다.
  *
- * 열이 60개라 가로 스크롤은 불가피하다. 칸은 있음(채움)·없음(비움)·모름(?)
- * 셋뿐이고 숫자를 넣지 않는다 — 자리 수의 많고 적음은 이 화면의 질문이 아니다.
+ * 열이 60개라 가로 스크롤은 불가피하다. 칸은 있음·없음·모름(?) 셋뿐이고 숫자를
+ * 넣지 않는다 — 자리 수의 많고 적음은 이 화면의 질문이 아니다. 칸은 히트맵·달력과
+ * 같은 정사각 면이고 격자선은 없다(DESIGN.md 1.6).
  */
 export function DateMatrix({
   rows,
@@ -86,14 +91,14 @@ export function DateMatrix({
         <thead>
           <tr>
             <th
-              className="sticky top-0 left-0 z-30 border-r border-b border-line bg-surface"
+              className="sticky top-0 left-0 z-30 border-r border-line bg-surface"
               style={{ width: LABEL, minWidth: LABEL }}
             />
             {monthSpans.map((month) => (
               <th
                 key={month.label}
                 colSpan={month.span}
-                className="sticky top-0 z-20 border-r border-b border-line bg-surface px-1.5 py-1 text-left text-2xs font-semibold whitespace-nowrap text-muted num"
+                className="sticky top-0 z-20 bg-surface px-1 pt-2 pb-0.5 text-left text-2xs font-semibold whitespace-nowrap text-muted num"
               >
                 {month.label}
               </th>
@@ -101,7 +106,7 @@ export function DateMatrix({
           </tr>
           <tr>
             <th
-              className="sticky left-0 z-30 border-r border-b border-line bg-surface px-2 py-1 text-left text-2xs font-medium text-subtle"
+              className="sticky left-0 z-30 border-r border-line bg-surface px-2 py-1 text-left text-2xs font-medium text-subtle"
               style={{ width: LABEL, minWidth: LABEL }}
             >
               구역 / 객실
@@ -112,7 +117,7 @@ export function DateMatrix({
                 <th
                   key={date}
                   className={cx(
-                    "border-r border-b border-line bg-surface p-0 text-center num",
+                    "bg-surface p-0 pb-1 text-center num",
                     date === today && "font-semibold",
                   )}
                   style={{ width: COL, minWidth: COL }}
@@ -121,12 +126,7 @@ export function DateMatrix({
                   <span className="block text-2xs leading-tight">
                     {Number(date.slice(8, 10))}
                   </span>
-                  <span
-                    className={cx(
-                      "block text-2xs leading-tight",
-                      [0, 6].includes(dow) ? "text-weekend" : "text-subtle",
-                    )}
-                  >
+                  <span className={cx("block text-2xs leading-tight", dowTone(dow))}>
                     {DOW[dow]}
                   </span>
                 </th>
@@ -139,14 +139,11 @@ export function DateMatrix({
           {groups.map((group) => (
             <Fragment key={group.campName}>
               <tr>
-                <th
-                  colSpan={dates.length + 1}
-                  className="border-b border-line bg-surface-2 p-0 text-left"
-                >
+                <th colSpan={dates.length + 1} className="p-0 text-left">
                   {/* 배경 띠는 전체 폭이지만 텍스트는 따로 붙여야 한다.
                       colSpan th에 sticky를 걸면 박스는 이미 전체 폭이라
                       움직일 여지가 없고 텍스트만 왼쪽으로 사라진다. */}
-                  <span className="sticky left-0 inline-block px-2 py-1 text-2xs font-semibold whitespace-nowrap">
+                  <span className="sticky left-0 inline-block px-2 pt-3 pb-1 text-2xs font-semibold whitespace-nowrap text-muted">
                     {group.campName}
                   </span>
                 </th>
@@ -157,7 +154,7 @@ export function DateMatrix({
                   <th
                     title={`${row.campName} · ${row.label}`}
                     className={cx(
-                      "sticky left-0 z-20 border-r border-b border-line bg-surface px-2 py-0 text-left font-normal",
+                      "sticky left-0 z-20 border-r border-line bg-surface px-2 py-0 text-left font-normal",
                       row.kind === "room" && "pl-4 text-subtle",
                     )}
                     style={{ width: LABEL, minWidth: LABEL }}
@@ -172,6 +169,7 @@ export function DateMatrix({
 
                   {dates.map((date) => {
                     const state = evaluate(row, date, data, selection).state;
+                    const pickable = state === "open" || state === "none";
                     const isSelected =
                       selected?.date === date && selected?.campId === row.campId;
 
@@ -179,16 +177,23 @@ export function DateMatrix({
                       <td
                         key={date}
                         title={`${row.campName} · ${row.label} · ${formatShort(date)}`}
-                        onClick={() => state !== "unknown" && onPick(row.campId, date)}
+                        onClick={() => pickable && onPick(row.campId, date)}
                         style={{ width: COL, minWidth: COL }}
-                        className={cx(
-                          "h-8 border-r border-b border-line text-center text-subtle num",
-                          state !== "unknown" && "cursor-pointer",
-                          state === "open" && "bg-fill",
-                          isSelected && "ring-2 ring-accent ring-inset",
-                        )}
+                        className={cx("p-px", pickable && "cursor-pointer")}
                       >
-                        {state === "unknown" ? "?" : ""}
+                        {/* 이 캠핑장에 묻지 않은 날은 칸을 그리지 않는다 — 없음과 다르다(DESIGN.md 1.6). */}
+                        {state !== "unasked" && (
+                          <span
+                            className={cx(
+                              "flex aspect-square items-center justify-center rounded-xs text-2xs num",
+                              cellTone(state),
+                              // 고른 칸은 primary 테두리. 사용자가 고른 것에만 primary 를 쓴다.
+                              isSelected && "ring-2 ring-accent ring-offset-1 ring-offset-surface",
+                            )}
+                          >
+                            {state === "unknown" ? "?" : ""}
+                          </span>
+                        )}
                       </td>
                     );
                   })}

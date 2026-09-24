@@ -500,11 +500,11 @@
     "source": "gocamping:2672"
   },
   "maketicket:yeomjeon": {
-    "lat": 37.7296231,
-    "lng": 127.2915282,
-    "address": "경상북도 울진군 근남면 수산리 76",
+    "lat": 36.9711531,
+    "lng": 129.3982674,
+    "address": "경상북도 울진군 근남면 수산리",
     "sido": "경북",
-    "source": "gocamping:100041"
+    "source": "nominatim"
   },
   "moonhwain:gumi-nakdonggang": {
     "lat": 36.1383874957578,

@@ -144,9 +144,12 @@ async function knpsAddress(kind: "C" | "S", deptId: string) {
 /**
  * 고캠핑에도 포털에도 주소가 없는 곳. 동 단위 주소로 찾는다. 출처를 같이 적는다.
  * - 승촌공원 캠핑장: 광주광역시 남구 승촌동(Xticket 캠핑장 이름·광주 남구 공원 안내)
+ * - 울진 염전해변캠핑장: 고캠핑(100041)의 주소는 맞는데 좌표가 경기 가평 쪽을 가리킨다.
+ *   주소로 다시 찾는다.
  */
 const ADDRESSES: Record<string, string> = {
   "xticket:seungchon": "광주광역시 남구 승촌동",
+  "maketicket:yeomjeon": "경상북도 울진군 근남면 수산리",
 };
 
 /**
@@ -158,7 +161,6 @@ const GOCAMPING_IDS: Record<string, number> = {
   "rsvasp:sangso": 1570,
   "gmuc:dodeoksan": 331,
   "maketicket:jangho": 2672,
-  "maketicket:yeomjeon": 100041,
 };
 
 const OVERPASS = [

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Check, Spinner, cx, wonShort } from "@/components/ui";
 import { selectedRooms, type CampData } from "@/lib/availability";
 import { formatMonthDay } from "@/lib/date";
+import { sidoOf, sidoRank } from "@/lib/places";
 import type { BookingWindow } from "@/lib/types";
 import { useSelection } from "@/store/selection";
 
@@ -63,22 +64,37 @@ export function TargetPicker({ data }: { data: CampData[] }) {
   ).length;
 
   const needle = query.trim().toLowerCase();
+  // 지역(시도)으로 묶고 지역 안에서는 이름순이다. 포털 순서로 묶었더니 사용자가 모르는 구분
+  // (고성군 · 국립공원 · Xticket)으로 나뉘었다. 사람은 "강원 쪽", "지리산"으로 찾는다.
   const visible = useMemo(
     () =>
-      !needle
-        ? data
-        : data.filter(({ camp, zoneScan, roomScan }) =>
+      data
+        .filter(
+          ({ camp, zoneScan, roomScan }) =>
+            !needle ||
             [
               camp.name,
+              sidoOf(camp.id),
+              camp.portalLabel,
               ...(zoneScan?.zones ?? []).map((zone) => zone.name),
               ...(roomScan?.rooms ?? []).map((room) => room.name),
             ]
               .join(" ")
               .toLowerCase()
               .includes(needle),
-          ),
+        )
+        .toSorted(
+          (a, b) =>
+            sidoRank(sidoOf(a.camp.id)) - sidoRank(sidoOf(b.camp.id)) ||
+            a.camp.name.localeCompare(b.camp.name, "ko"),
+        ),
     [data, needle],
   );
+  const regionSize = useMemo(() => {
+    const size = new Map<string, number>();
+    for (const { camp } of visible) size.set(sidoOf(camp.id), (size.get(sidoOf(camp.id)) ?? 0) + 1);
+    return size;
+  }, [visible]);
 
   return (
     <div>
@@ -86,7 +102,7 @@ export function TargetPicker({ data }: { data: CampData[] }) {
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="캠핑장 · 구역 · 객실"
+          placeholder="캠핑장 · 지역 · 구역"
           className="min-w-0 flex-1 rounded-md bg-surface-2 px-3 py-2 text-sm outline-none placeholder:text-subtle"
         />
         {pickedCamps > 0 && (
@@ -110,15 +126,14 @@ export function TargetPicker({ data }: { data: CampData[] }) {
           const campState = !picks ? "off" : allOn ? "on" : "partial";
           // 스캔이 받은 기간이 더 새롭다. 국립공원은 이것밖에 없다.
           const period = windowLabel(zoneScan ? zoneScan.window : camp.window, camp.error);
-          // 포털이 바뀌는 곳에 머리를 단다. 목록은 포털 순서 그대로다.
-          const portalHead =
-            visible[index - 1]?.camp.portalId !== camp.portalId ? camp.portalLabel : null;
+          const sido = sidoOf(camp.id);
+          const regionHead = index === 0 || sidoOf(visible[index - 1].camp.id) !== sido ? sido : null;
 
           return (
             <li key={camp.id} className="border-b border-line last:border-0">
-              {portalHead && (
+              {regionHead && (
                 <h3 className="bg-surface-2 px-4 pt-4 pb-1.5 text-xs font-semibold text-muted">
-                  {portalHead}
+                  {regionHead} <span className="font-normal num">{regionSize.get(regionHead)}</span>
                 </h3>
               )}
               <div className="flex items-center gap-2.5 px-4 py-2.5">
@@ -142,11 +157,9 @@ export function TargetPicker({ data }: { data: CampData[] }) {
                     <span className="block truncate text-base font-medium">
                       {camp.name}
                     </span>
-                    {period && (
-                      <span className="mt-px block truncate text-xs text-muted num">
-                        {period}
-                      </span>
-                    )}
+                    <span className="mt-px block truncate text-xs text-muted num">
+                      {[camp.portalLabel, period].filter(Boolean).join(" · ")}
+                    </span>
                   </span>
                   <Caret open={campOpen} />
                 </button>

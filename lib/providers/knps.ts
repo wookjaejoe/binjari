@@ -19,6 +19,7 @@ import type {
  * 그래서 표를 한 번 받아 캐시에 두고 zoneDay·roomDay 가 그 표에서 읽는다.
  *
  * 구역은 표의 시설 묶음(자동차야영장·카라반·특화야영장…), 객실은 영지 한 칸(B01…)이다.
+ * 표에는 사진이 없다. 구역 사진은 이용안내 페이지의 사진첩에서 따로 받는다.
  */
 
 const ORIGIN = "https://reservation.knps.or.kr";
@@ -176,6 +177,49 @@ export function roomDayOf(grid: Grid, zoneNo: string, date: string, nights: numb
   return { rooms, available };
 }
 
+export type Photo = { title: string; src: string };
+
+/**
+ * 이용안내 > 야영장 페이지의 사진첩. 사진마다 `alt` 에 시설 이름이 붙어 있다
+ * (`카라반(4인)`, `카라반(4인)_내부1`, `야영장 입구`, `배치도`). 같은 사진첩이 두 번(큰 것·작은 것)
+ * 들어 있어 주소로 거른다.
+ */
+export function parsePhotos(html: string): Photo[] {
+  const seen = new Set<string>();
+  const photos: Photo[] = [];
+  for (const [, src, title] of html.matchAll(
+    /<div class="swiper-slide"[^>]*>\s*<img src="([^"]+)" alt="([^"]*)"/g,
+  )) {
+    if (seen.has(src)) continue;
+    seen.add(src);
+    photos.push({ title: title.trim(), src: new URL(src, ORIGIN).href });
+  }
+  return photos;
+}
+
+/**
+ * 구역의 표지 사진. 시설 이름이 구역 이름으로 시작하는 첫 사진(카라반 → `카라반(4인)`)이고,
+ * `_내부1` 같은 딸린 사진은 건너뛴다. 맞는 게 없으면(예: `특화야영장` 인데 사진은 `하우스형…`)
+ * 그 야영장의 첫 사진을 쓴다. 배치도는 지도라 표지로 쓰지 않는다.
+ */
+export function photoFor(photos: Photo[], zone: string): string | null {
+  const covers = photos.filter(
+    (photo) => !photo.title.includes("_") && !photo.title.includes("배치도"),
+  );
+  return (covers.find((photo) => photo.title.startsWith(zone)) ?? covers[0])?.src ?? null;
+}
+
+function photos(camp: CampRef): Promise<Photo[]> {
+  return memo(`knps:photos:${camp.slug}`, 12 * HOUR, async () =>
+    parsePhotos(
+      await fetchText(
+        `${ORIGIN}/contents/C/serviceGuide.do?parkId=${camp.slug.slice(0, 3)}` +
+          `&deptId=${camp.slug}&prdDvcd=C`,
+      ),
+    ),
+  );
+}
+
 function grid(camp: CampRef): Promise<Grid> {
   // 키가 `portal:<campId>` 로 시작하면 새로고침(dropScanCache)이 같이 지운다.
   return memo(`portal:${camp.id}:grid`, GRID_TTL, async () =>
@@ -229,7 +273,13 @@ export const knps: CampProvider = {
   },
 
   async zoneDay(_portal, camp, date, nights) {
-    return zoneDayOf(await grid(camp), date, nights);
+    const day = zoneDayOf(await grid(camp), date, nights);
+    // 사진을 못 받아도 빈자리 조회는 그대로다. 사진 없음으로 그린다.
+    const gallery = await photos(camp).catch(() => []);
+    return {
+      ...day,
+      zones: day.zones.map((zone) => ({ ...zone, photo: photoFor(gallery, zone.name) })),
+    };
   },
 
   async roomDay(_portal, camp, zoneNo, date, nights) {

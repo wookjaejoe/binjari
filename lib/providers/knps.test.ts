@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseGrid, roomDayOf, zoneDayOf } from "@/lib/providers/knps";
+import { parseGrid, parsePhotos, photoFor, roomDayOf, zoneDayOf } from "@/lib/providers/knps";
 
 /** 실제 응답(campsiteList.do)의 뼈대를 줄인 것. 공백·숨긴 thead·툴팁 제목까지 그대로 둔다. */
 const cell = (name: string, date: string, icon: string, code: string, amount?: number) =>
@@ -111,5 +111,34 @@ describe("roomDayOf", () => {
   it("예약 끝난 칸은 요금이 없으니 표에서 처음 보이는 요금을 적는다", () => {
     const day = roomDayOf(grid, "자동차야영장", "2026-09-26", 1);
     expect(day.rooms[1].amount).toBe(25000);
+  });
+});
+
+describe("photoFor", () => {
+  const slide = (file: string, title: string) =>
+    `<div class="swiper-slide" title="${title}">\n  <img src="https://reservation.knps.or.kr/cntnts/camp/B012010/${file}" alt="${title}" title="${title}" />\n</div>`;
+  const gallery = [
+    slide("001.jpg", "배치도"),
+    slide("005.jpg", "야영장 입구"),
+    slide("008.jpg", "카라반(4인)_내부1"),
+    slide("006.jpg", "카라반(4인)"),
+  ].join("");
+  // 사진첩이 큰 것·작은 것 두 번 들어 있다.
+  const photos = parsePhotos(gallery + gallery);
+
+  it("같은 사진은 한 번만 읽는다", () => {
+    expect(photos).toHaveLength(4);
+  });
+
+  it("구역 이름으로 시작하는 시설 사진을 쓰고, 딸린 사진(_내부1)은 건너뛴다", () => {
+    expect(photoFor(photos, "카라반")).toMatch(/006\.jpg$/);
+  });
+
+  it("맞는 시설이 없으면 야영장의 첫 사진이다 — 배치도는 지도라 빼고", () => {
+    expect(photoFor(photos, "캠핑용자동차 전용야영지")).toMatch(/005\.jpg$/);
+  });
+
+  it("사진이 없으면 null", () => {
+    expect(photoFor([], "카라반")).toBeNull();
   });
 });

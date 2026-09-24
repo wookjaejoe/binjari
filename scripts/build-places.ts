@@ -149,6 +149,15 @@ const ADDRESSES: Record<string, string> = {
   "xticket:seungchon": "광주광역시 남구 승촌동",
 };
 
+/**
+ * 고캠핑 상세 번호를 이미 아는 캠핑장. 커버리지 조사 때 고캠핑의 예약 링크를 따라가 포털을
+ * 찾았으니, 이름으로 다시 찾을 것 없이 그 번호의 좌표를 쓴다.
+ */
+const GOCAMPING_IDS: Record<string, number> = {
+  "rsvasp:jigyeong": 2794,
+  "rsvasp:sangso": 1570,
+};
+
 const OVERPASS = [
   "https://overpass-api.de/api/interpreter",
   "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
@@ -246,6 +255,19 @@ async function campPlace(camp: Camp): Promise<Place | null> {
     const address = await knpsAddress("C", slug);
     const point = address ? await geocode(address) : null;
     return point ? { ...point, address, sido: sidoOf(address), source: "nominatim" } : null;
+  }
+
+  if (GOCAMPING_IDS[camp.id]) {
+    const id = GOCAMPING_IDS[camp.id];
+    const found = readGocamping(await text(`${GOCAMPING}/bsite/camp/info/read.do?c_no=${id}`));
+    if (!found.lat || !found.lng) return null;
+    return {
+      lat: found.lat,
+      lng: found.lng,
+      address: found.address,
+      sido: sidoOf(found.address),
+      source: `gocamping:${id}`,
+    };
   }
 
   if (ADDRESSES[camp.id]) {

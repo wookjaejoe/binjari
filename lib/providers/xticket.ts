@@ -32,6 +32,10 @@ const UA =
 /**
  * 캠핑장 목록. slug 는 우리 쪽 짧은 이름이고 encode 가 포털의 열쇠다. 숙박이 아닌 상품(축구장
  * 같은 대관)을 같이 파는 곳은 skip 에 구역 이름을 적어 뺀다.
+ *
+ * 고캠핑이 Xticket 으로 잇는 칠곡보 오토캠핑장(3b8dfd4f…)과 양주 미술관옆 캠핑장(aa49da0f…)은
+ * 예약 화면으로 넘어가는 순간 `/web/error.html?code=9001`("잘못된 접근입니다")로 튕긴다
+ * (2026-09-25). 같은 순서로 다른 곳은 열리니 캠핑장 쪽 사정이다 — 넣지 않았다.
  */
 export const XTICKET_SHOPS: { slug: string; name: string; encode: string; skip?: string[] }[] = [
   {

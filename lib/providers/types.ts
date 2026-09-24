@@ -4,7 +4,8 @@ export type ProviderId =
   | "knpsShelter"
   | "xticket"
   | "moonhwain"
-  | "yesan";
+  | "yesan"
+  | "rsvasp";
 
 export type Portal = {
   id: string;

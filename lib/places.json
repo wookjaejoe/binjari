@@ -499,6 +499,20 @@
     "sido": "세종",
     "source": "gocamping:7541"
   },
+  "rsvasp:jigyeong": {
+    "lat": 37.9225757870964,
+    "lng": 128.80102877363,
+    "address": "강원특별자치도 양양군 현남면 지경리 24-8",
+    "sido": "강원",
+    "source": "gocamping:2794"
+  },
+  "rsvasp:sangso": {
+    "lat": 36.2373729,
+    "lng": 127.4690661,
+    "address": "대전광역시 동구 산내로 748 (상소동)",
+    "sido": "대전",
+    "source": "gocamping:1570"
+  },
   "xticket:dalseo-byeolbit": {
     "lat": 35.8232403786948,
     "lng": 128.557039480382,

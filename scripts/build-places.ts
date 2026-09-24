@@ -157,6 +157,8 @@ const GOCAMPING_IDS: Record<string, number> = {
   "rsvasp:jigyeong": 2794,
   "rsvasp:sangso": 1570,
   "gmuc:dodeoksan": 331,
+  "maketicket:jangho": 2672,
+  "maketicket:yeomjeon": 100041,
 };
 
 const OVERPASS = [

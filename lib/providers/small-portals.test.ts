@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parseGmuc } from "@/lib/providers/gmuc";
+import { parseMakeTicket } from "@/lib/providers/maketicket";
 import { parseActDate } from "@/lib/providers/moonhwain";
 import { parseYesanCalendar } from "@/lib/providers/yesan";
 
@@ -62,5 +63,23 @@ describe("parseGmuc (광명 도덕산)", () => {
 
   it("달력이 없으면 실패다", () => {
     expect(() => parseGmuc("<html></html>")).toThrow();
+  });
+});
+
+describe("parseMakeTicket (스마틱스 Forest)", () => {
+  const html = `
+    <td class="nmo"><span></span></td>
+    <td class="active" id="calendar_1"> <strong>1</strong> <ul>
+      <li class='s1'><a href='#' onclick='javascript:f_SelectDateZone( "20261001" , "CM000172" , "SD69104" , "3" , "7" );'><span>7</span>오토캠핑</a></li><li class='s2 zero'><a href='#' onclick='javascript:f_SelectDateZone( "20261001" , "CM000173" , "SD69104" , "4" , "0" );'><span>0</span>텐트</a></li>
+    </ul></td>
+    <td class="active" id="calendar_2"> <strong>2</strong> </td>`;
+
+  it("날짜 × 구역의 남은 수를 읽고, 구역이 없는 날은 뺀다", () => {
+    expect(parseMakeTicket(html)).toEqual({
+      "2026-10-01": {
+        CM000172: { name: "오토캠핑", left: 7 },
+        CM000173: { name: "텐트", left: 0 },
+      },
+    });
   });
 });

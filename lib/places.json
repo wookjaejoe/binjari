@@ -492,6 +492,20 @@
     "sido": "경북",
     "source": "gocamping:100338"
   },
+  "maketicket:jangho": {
+    "lat": 37.2845337,
+    "lng": 129.3121934,
+    "address": "강원특별자치도 삼척시 근덕면 삼척로 2116",
+    "sido": "강원",
+    "source": "gocamping:2672"
+  },
+  "maketicket:yeomjeon": {
+    "lat": 37.7296231,
+    "lng": 127.2915282,
+    "address": "경상북도 울진군 근남면 수산리 76",
+    "sido": "경북",
+    "source": "gocamping:100041"
+  },
   "moonhwain:gumi-nakdonggang": {
     "lat": 36.1383874957578,
     "lng": 128.370656687456,

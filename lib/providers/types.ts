@@ -6,7 +6,8 @@ export type ProviderId =
   | "moonhwain"
   | "yesan"
   | "rsvasp"
-  | "gmuc";
+  | "gmuc"
+  | "maketicket";
 
 export type Portal = {
   id: string;

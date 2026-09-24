@@ -1,6 +1,7 @@
 import { gmuc } from "@/lib/providers/gmuc";
 import { knps } from "@/lib/providers/knps";
 import { knpsShelter } from "@/lib/providers/knps-shelter";
+import { maketicket } from "@/lib/providers/maketicket";
 import { moonhwain } from "@/lib/providers/moonhwain";
 import { pubcamping } from "@/lib/providers/pubcamping";
 import { rsvasp } from "@/lib/providers/rsvasp";
@@ -63,6 +64,12 @@ export const PORTALS: Portal[] = [
     label: "지자체 캠핑장",
     provider: "gmuc",
   },
+  {
+    id: "maketicket",
+    host: "forest.maketicket.co.kr",
+    label: "지자체 캠핑장",
+    provider: "maketicket",
+  },
 ];
 
 const PROVIDERS: Record<ProviderId, CampProvider> = {
@@ -74,6 +81,7 @@ const PROVIDERS: Record<ProviderId, CampProvider> = {
   yesan,
   rsvasp,
   gmuc,
+  maketicket,
 };
 
 /** 자동 발견 목록에서 뺄 캠핑장, 또는 표시 이름을 다듬을 곳. */

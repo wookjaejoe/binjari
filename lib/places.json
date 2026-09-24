@@ -1,4 +1,11 @@
 {
+  "gmuc:dodeoksan": {
+    "lat": 37.4592422,
+    "lng": 126.8607682,
+    "address": "경기도 광명시 밤일안로42번길 69 (하안동)",
+    "sido": "경기",
+    "source": "gocamping:331"
+  },
   "gwgs:baekdo": {
     "lat": 38.3017339,
     "lng": 128.5464673,

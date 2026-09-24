@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { parseGmuc } from "@/lib/providers/gmuc";
 import { parseActDate } from "@/lib/providers/moonhwain";
 import { parseYesanCalendar } from "@/lib/providers/yesan";
 
@@ -31,5 +32,35 @@ describe("parseYesanCalendar (예산 예당)", () => {
       "2026-10-01": { A구역: 3, B구역: 17 },
       "2026-10-03": { A구역: 0, B구역: 2 },
     });
+  });
+});
+
+describe("parseGmuc (광명 도덕산)", () => {
+  const html = `
+    <table class='view'><tbody>
+    <tr class="trBefore"> <td></td>
+      <td> <div class="date">25</div>
+        <div class="area_done"><a href="javascript:alert('예약은 내일 날짜 부터 할 수 있습니다.');">A구역 : 예약마감</a></div>
+        <div class="area_done"><a href="javascript:alert('예약은 내일 날짜 부터 할 수 있습니다.');">B구역 : 예약마감</a></div> </td>
+      <td> <div class="date">26</div>
+        <div class="area"><a href="/user/conn/directLink.do?cTo=x" target='_blank'>A구역 : 0</a></div>
+        <div class="area"><a href="/user/conn/directLink.do?cTo=x" target='_blank'>B구역 : 17</a></div> </td>
+    </tr>
+    <tr class="trAfter"> <td> <div class="date">1</div>
+        <div class="area"><a href="/user/conn/directLink.do?cTo=x" target='_blank'>A구역 : 19</a></div> </td>
+    </tr></tbody></table>
+    <script> function calCont(flag){ if("20261001"!=null&&"20261001"!=""){ if(flag=="btnBefore"){
+      $("#reservDate").text("2026년 9월(예약현황)"); } else if(flag=="btnAfter"){
+      $("#reservDate").text("2026년 10월(예약현황)"); } } }</script>`;
+
+  it("이번 달·다음 달 줄을 날짜별 구역 남은 수로 읽고, 예약마감인 날은 뺀다", () => {
+    expect(parseGmuc(html)).toEqual({
+      "2026-09-26": { "A구역": 0, "B구역": 17 },
+      "2026-10-01": { "A구역": 19 },
+    });
+  });
+
+  it("달력이 없으면 실패다", () => {
+    expect(() => parseGmuc("<html></html>")).toThrow();
   });
 });

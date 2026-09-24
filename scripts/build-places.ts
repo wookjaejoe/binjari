@@ -156,6 +156,7 @@ const ADDRESSES: Record<string, string> = {
 const GOCAMPING_IDS: Record<string, number> = {
   "rsvasp:jigyeong": 2794,
   "rsvasp:sangso": 1570,
+  "gmuc:dodeoksan": 331,
 };
 
 const OVERPASS = [

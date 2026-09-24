@@ -1,3 +1,4 @@
+import { gmuc } from "@/lib/providers/gmuc";
 import { knps } from "@/lib/providers/knps";
 import { knpsShelter } from "@/lib/providers/knps-shelter";
 import { moonhwain } from "@/lib/providers/moonhwain";
@@ -56,6 +57,12 @@ export const PORTALS: Portal[] = [
     label: "지자체 캠핑장",
     provider: "rsvasp",
   },
+  {
+    id: "gmuc",
+    host: "www.gmuc.co.kr",
+    label: "지자체 캠핑장",
+    provider: "gmuc",
+  },
 ];
 
 const PROVIDERS: Record<ProviderId, CampProvider> = {
@@ -66,6 +73,7 @@ const PROVIDERS: Record<ProviderId, CampProvider> = {
   moonhwain,
   yesan,
   rsvasp,
+  gmuc,
 };
 
 /** 자동 발견 목록에서 뺄 캠핑장, 또는 표시 이름을 다듬을 곳. */

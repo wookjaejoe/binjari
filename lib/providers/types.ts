@@ -12,7 +12,8 @@ export type ProviderId =
   | "suseong"
   | "asanfmc"
   | "huyang"
-  | "ulju";
+  | "ulju"
+  | "dpto";
 
 export type Portal = {
   id: string;

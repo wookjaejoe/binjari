@@ -173,6 +173,8 @@ const GOCAMPING_IDS: Record<string, number> = {
   "asanfmc:gokgyocheon": 1993,
   "huyang:donggang": 6975,
   "ulju:deungeok-alps": 7315,
+  "dpto:waemok": 7889,
+  "dpto:nanjido": 7507,
 };
 
 const OVERPASS = [

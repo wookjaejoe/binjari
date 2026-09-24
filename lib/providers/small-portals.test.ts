@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parseAsan } from "@/lib/providers/asanfmc";
+import { parseDptoCalendar, parseDptoMap } from "@/lib/providers/dpto";
 import { parseGmuc } from "@/lib/providers/gmuc";
 import { parseHuyangCalendar, parseHuyangDay } from "@/lib/providers/huyang";
 import { remaining } from "@/lib/providers/gtdc";
@@ -181,5 +182,24 @@ describe("parseUljuDay (울주)", () => {
     expect(parseUljuDay({ result: "booking_ended", msg: "예약은 현재 달과 다음 달까지만 조회 가능합니다." })).toEqual([]);
     expect(parseUljuDay({ result: "no_list" })).toEqual([]);
     expect(() => parseUljuDay({ result: "error" })).toThrow();
+  });
+});
+
+describe("당진도시공사", () => {
+  it("달력에서 누를 수 있는 날만 읽는다", () => {
+    const html = `<li class="noclick"><span class='sat_font'>1</span></li>
+      <li onclick="Mapload('2026', '10', '02', this);Mapload2('2026', '10', '02', this);" ><span>2</span></li>`;
+    expect(parseDptoCalendar(html)).toEqual(["2026-10-02"]);
+  });
+
+  it("배치도에서 빈 사이트와 끝난 사이트를 읽고, 주석 속 옛 구역·관리동은 세지 않는다", () => {
+    const html = `<ul class="zone">
+      <li><a class="done" href="javascript:void(0);"><span>D-4</span></a></li>
+      <li><a class="cook" href="javascript:void(0);">취사장</a></li>
+      <li><a onclick="siteInfoLoad('2026-10-02', 'C-3', this)" href="javascript:void(0);">C-3</a></li>
+      <li><a href="javascript:void(0);">C-6</a></li>
+      <!-- <li><a onclick="siteInfoLoad('2026-10-02', '왜목7', this)" href="javascript:void(0);">왜목-7</a></li> -->
+    </ul>`;
+    expect(parseDptoMap(html)).toEqual({ "C-3": true, "D-4": false });
   });
 });

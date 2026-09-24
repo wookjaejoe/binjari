@@ -6,6 +6,27 @@
     "sido": "충남",
     "source": "gocamping:1993"
   },
+  "dpto:haeyang": {
+    "lat": 36.8953511,
+    "lng": 126.8188355,
+    "address": "충청남도 당진시 신평면 산정길 112",
+    "sido": "충남",
+    "source": "gocamping:714"
+  },
+  "dpto:nanjido": {
+    "lat": 37.0445491,
+    "lng": 126.4248087,
+    "address": "충청남도 당진시 석문면 난지도리 701",
+    "sido": "충남",
+    "source": "gocamping:7507"
+  },
+  "dpto:waemok": {
+    "lat": 37.0459155,
+    "lng": 126.5264874,
+    "address": "충청남도 당진시 석문면 왜목길 16-16",
+    "sido": "충남",
+    "source": "gocamping:7889"
+  },
   "gmuc:dodeoksan": {
     "lat": 37.4592422,
     "lng": 126.8607682,

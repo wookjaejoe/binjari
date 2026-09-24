@@ -14,7 +14,8 @@ export const PORTALS: Portal[] = [
   {
     id: "gwgs",
     host: "gwgs.pubcamping.kr",
-    label: "고성군",
+    // 대상 시트의 둘째 줄에 적는 종류다. 위치는 지역 묶음(강원)이 말한다.
+    label: "지자체 캠핑장",
     provider: "pubcamping",
   },
   {

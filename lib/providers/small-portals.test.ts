@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parseGmuc } from "@/lib/providers/gmuc";
+import { remaining } from "@/lib/providers/gtdc";
 import { parseMakeTicket } from "@/lib/providers/maketicket";
 import { parseActDate } from "@/lib/providers/moonhwain";
 import { parseYesanCalendar } from "@/lib/providers/yesan";
@@ -81,5 +82,23 @@ describe("parseMakeTicket (스마틱스 Forest)", () => {
         CM000173: { name: "텐트", left: 0 },
       },
     });
+  });
+});
+
+describe("remaining (강릉 연곡)", () => {
+  const zones = [
+    { id: "1", name: "A-대형데크", total: 53 },
+    { id: "4", name: "D-카라반", total: 9 },
+  ];
+
+  it("찬 수(block)를 구역 전체에서 빼 남은 수로 바꾸고, 날짜를 20YY 로 편다", () => {
+    expect(remaining(zones, { "26-09-28": { "1": "26", "4": "9" }, "26-10-03": { "1": "53" } })).toEqual({
+      "2026-09-28": { "1": 27, "4": 0 },
+      "2026-10-03": { "1": 0, "4": 9 },
+    });
+  });
+
+  it("block 이 비면(빈 배열) 예약 받는 날이 없다", () => {
+    expect(remaining(zones, [])).toEqual({});
   });
 });

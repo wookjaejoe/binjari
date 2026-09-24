@@ -6,6 +6,13 @@
     "sido": "경기",
     "source": "gocamping:331"
   },
+  "gtdc:yeongok": {
+    "lat": 37.8588053,
+    "lng": 128.8533563,
+    "address": "강원특별자치도 강릉시 연곡면 해안로 1282-10",
+    "sido": "강원",
+    "source": "gocamping:2185"
+  },
   "gwgs:baekdo": {
     "lat": 38.3017339,
     "lng": 128.5464673,

@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import type { Bounds, Pin } from "@/components/PlaceMap";
 import { Check, Spinner, cx, wonShort } from "@/components/ui";
 import { selectedRooms, type CampData } from "@/lib/availability";
 import { formatMonthDay } from "@/lib/date";
-import { sidoOf, sidoRank } from "@/lib/places";
+import { placeOf, sidoOf, sidoRank } from "@/lib/places";
 import type { BookingWindow } from "@/lib/types";
 import { useSelection } from "@/store/selection";
 
@@ -22,6 +24,21 @@ function windowLabel(window: BookingWindow | null | undefined, error?: string) {
   ]
     .filter(Boolean)
     .join(" · ");
+}
+
+// maplibre-gl 은 무겁다. 시트를 열 때 받는다.
+const PlaceMap = dynamic(() => import("@/components/PlaceMap"), { ssr: false });
+
+function inside(bounds: Bounds | null, campId: string) {
+  const place = placeOf(campId);
+  // 좌표가 없는 캠핑장은 지도로 거를 수 없다. 늘 목록에 둔다.
+  if (!bounds || !place) return true;
+  return (
+    place.lng >= bounds.west &&
+    place.lng <= bounds.east &&
+    place.lat >= bounds.south &&
+    place.lat <= bounds.north
+  );
 }
 
 function Caret({ open }: { open: boolean }) {
@@ -58,38 +75,89 @@ export function TargetPicker({ data }: { data: CampData[] }) {
     clearAll,
   } = useSelection();
   const [query, setQuery] = useState("");
+  const [bounds, setBounds] = useState<Bounds | null>(null);
+  const [mapFailed, setMapFailed] = useState(false);
+  const [focus, setFocus] = useState<string[]>([]);
+  const list = useRef<HTMLUListElement>(null);
 
   const pickedCamps = Object.values(selection).filter(
     (zones) => Object.keys(zones).length > 0,
   ).length;
 
   const needle = query.trim().toLowerCase();
+  const matched = useMemo(
+    () =>
+      data.filter(
+        ({ camp, zoneScan, roomScan }) =>
+          !needle ||
+          [
+            camp.name,
+            sidoOf(camp.id),
+            camp.portalLabel,
+            ...(zoneScan?.zones ?? []).map((zone) => zone.name),
+            ...(roomScan?.rooms ?? []).map((room) => room.name),
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(needle),
+      ),
+    [data, needle],
+  );
+
+  // 지도는 검색에 걸린 곳만 찍는다. 켠 캠핑장은 primary.
+  const pins = useMemo<Pin[]>(
+    () =>
+      matched.flatMap(({ camp }) => {
+        const place = placeOf(camp.id);
+        if (!place) return [];
+        const on = Object.keys(selection[camp.id] ?? {}).length > 0;
+        return [{ id: camp.id, name: camp.name, lat: place.lat, lng: place.lng, on }];
+      }),
+    [matched, selection],
+  );
+
+  // 목록은 검색어가 있으면 검색 결과 전부, 없으면 지도에 보이는 곳이다. 지도를 움직여
+  // "이 근처"를 고르고, 이름을 알면 검색이 지도를 거기로 옮긴다.
   // 지역(시도)으로 묶고 지역 안에서는 이름순이다. 포털 순서로 묶었더니 사용자가 모르는 구분
   // (고성군 · 국립공원 · Xticket)으로 나뉘었다. 사람은 "강원 쪽", "지리산"으로 찾는다.
   const visible = useMemo(
     () =>
-      data
-        .filter(
-          ({ camp, zoneScan, roomScan }) =>
-            !needle ||
-            [
-              camp.name,
-              sidoOf(camp.id),
-              camp.portalLabel,
-              ...(zoneScan?.zones ?? []).map((zone) => zone.name),
-              ...(roomScan?.rooms ?? []).map((room) => room.name),
-            ]
-              .join(" ")
-              .toLowerCase()
-              .includes(needle),
-        )
+      matched
+        .filter(({ camp }) => needle || inside(bounds, camp.id))
         .toSorted(
           (a, b) =>
             sidoRank(sidoOf(a.camp.id)) - sidoRank(sidoOf(b.camp.id)) ||
             a.camp.name.localeCompare(b.camp.name, "ko"),
         ),
-    [data, needle],
+    [matched, needle, bounds],
   );
+  const cropped = !needle && !mapFailed && visible.length < matched.length;
+
+  // 검색어가 멈추면 지도를 걸린 곳에 맞춘다. 글자마다 움직이면 어지럽다.
+  const [fitKey, setFitKey] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setFitKey(needle), 300);
+    return () => clearTimeout(timer);
+  }, [needle]);
+
+  // 핀을 누르면 목록에서 그 캠핑장을 보여주고 잠깐 칠해 둔다.
+  const pick = (ids: string[]) => {
+    setFocus(ids);
+    const box = list.current;
+    const row = box?.querySelector<HTMLElement>(`[data-camp="${CSS.escape(ids[0])}"]`);
+    if (!box || !row) return;
+    // scrollIntoView 는 바깥(잠가 둔 페이지)까지 굴린다. 목록 상자만 움직인다.
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    box.scrollTo({
+      top: row.offsetTop - box.clientHeight / 2 + row.clientHeight / 2,
+      behavior: still ? "auto" : "smooth",
+    });
+  };
+  useEffect(() => {
+    if (!focus.length) return;
+    const timer = setTimeout(() => setFocus([]), 1600);
+    return () => clearTimeout(timer);
+  }, [focus]);
   const regionSize = useMemo(() => {
     const size = new Map<string, number>();
     for (const { camp } of visible) size.set(sidoOf(camp.id), (size.get(sidoOf(camp.id)) ?? 0) + 1);
@@ -97,8 +165,23 @@ export function TargetPicker({ data }: { data: CampData[] }) {
   }, [visible]);
 
   return (
-    <div>
-      <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-line bg-surface px-4 py-2.5">
+    <div className="flex h-full flex-col sm:flex-row">
+      {!mapFailed && (
+        <div className="relative h-64 shrink-0 border-b border-line bg-surface-2 sm:order-last sm:h-auto sm:flex-1 sm:border-b-0">
+          <PlaceMap
+            className="absolute inset-0"
+            pins={pins}
+            fitKey={fitKey}
+            showReset={cropped}
+            onBounds={setBounds}
+            onPick={pick}
+            onFail={() => setMapFailed(true)}
+          />
+        </div>
+      )}
+
+      <div className="flex min-h-0 flex-1 flex-col sm:w-80 sm:flex-none sm:border-r sm:border-line">
+      <div className="flex shrink-0 items-center gap-2 border-b border-line bg-surface px-4 py-2.5">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -116,7 +199,7 @@ export function TargetPicker({ data }: { data: CampData[] }) {
         )}
       </div>
 
-      <ul className="pb-2">
+      <ul ref={list} className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2">
         {visible.map(({ camp, zoneScan, roomScan }, index) => {
           const picks = selection[camp.id];
           const campOpen = expanded[camp.id] ?? false;
@@ -136,7 +219,13 @@ export function TargetPicker({ data }: { data: CampData[] }) {
                   {regionHead} <span className="font-normal num">{regionSize.get(regionHead)}</span>
                 </h3>
               )}
-              <div className="flex items-center gap-2.5 px-4 py-2.5">
+              <div
+                data-camp={camp.id}
+                className={cx(
+                  "flex items-center gap-2.5 px-4 py-2.5 transition-colors duration-(--dur-fast)",
+                  focus.includes(camp.id) && "bg-surface-2",
+                )}
+              >
                 <Check
                   state={campState}
                   label={camp.name}
@@ -267,10 +356,11 @@ export function TargetPicker({ data }: { data: CampData[] }) {
 
         {!visible.length && (
           <li className="px-4 py-10 text-center text-sm text-muted">
-            검색 결과가 없어요
+            {needle ? "검색 결과가 없어요" : "이 지도 안에는 캠핑장이 없어요"}
           </li>
         )}
       </ul>
+      </div>
     </div>
   );
 }

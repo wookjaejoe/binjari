@@ -28,6 +28,9 @@
 /shots/
 /.playwright-mcp/
 
+# 설치 때 node_modules 에서 복사하는 maplibre 워커 (scripts/copy-maplibre-worker.mjs)
+/public/maplibre/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

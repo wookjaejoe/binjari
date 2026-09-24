@@ -123,7 +123,12 @@ Xticket(2026-09-24)은 캠핑장마다 `shopEncode` 하나로 갈리고, 세션 
 모름(`?`) 셋이다. 한 행을 가로로 훑으면 그 구역의 시간 흐름이 읽히고, 세로로 보면 같은 날
 여러 대상이 비교된다. **빈 날만** 토글을 켜면 하나라도 열린 날짜 열만 남는다.
 
-대상 버튼을 누르면 시트에서 캠핑장 → 구역 → 객실을 3단계로 켜고 끈다. 목록은 지역(시도)으로
+대상 버튼을 누르면 시트에서 캠핑장 → 구역 → 객실을 3단계로 켜고 끈다. 시트 위(데스크톱은
+오른쪽)에 지도가 있고, 목록은 **지도에 보이는 캠핑장**이다 — 지도를 옮기고 당겨 "이 근처"를
+고른다. 검색어가 있으면 지도와 상관없이 걸린 곳 전부가 나오고 지도가 그곳으로 옮겨 간다. 핀을
+누르면 목록이 그 캠핑장으로 굴러가 잠깐 칠해지고, 묶음을 누르면 그 묶음이 펼쳐지게 당긴다. 켠
+캠핑장의 핀은 primary, 그런 핀이 든 묶음은 테두리만 primary다. 지도를 못 그리면(스타일 실패,
+WebGL 없음) 지도 칸이 빠지고 목록만 남는다. 목록은 지역(시도)으로
 묶여 있고(북에서 남으로), 행마다 포털 종류(국립공원 야영장 · 대피소 · 지자체 캠핑장)를 적는다. 캠핑장 행에는 포털이 알려준 기간과 한도를 그대로 적는다
 (`9월 16일–10월 31일 · 최대 3박`). 기간을 못 받으면 `조회 실패` 또는 `예약 기간 없음`이다. 어느
 경우든 체크박스는 켤 수 있다. 국립공원 야영장은 켜거나 펼치기 전에는 기간을 적지 않는다 — 기간을
@@ -162,7 +167,8 @@ app/page.tsx                 조건 바 · 빈 상태 · 표 · 시트 조립
 components/views/DateMatrix  표
 components/ZoneCards         구역 사진 카드 · 구역 달력 시트
 components/ZoneCalendars     카드의 주×요일 히트맵 · 시트의 월 달력
-components/TargetPicker      캠핑장 → 구역 → 객실 선택 시트
+components/TargetPicker      캠핑장 → 구역 → 객실 선택 시트 · 지도 영역으로 목록 거르기
+components/PlaceMap          대상 시트의 지도 (maplibre-gl + OpenFreeMap, 시트를 열 때 받는다)
 components/FilterSheets      숙박일수 · 요일 시트
 components/DayDetail         날짜 상세 · 예약 페이지 열기
 components/Legend            있음 / 없음 / 모름
@@ -226,4 +232,10 @@ node scripts/build-places.ts  # lib/places.json 을 채운다 (--all 이면 전�
 - 국립공원 예약 화면은 표 조회를 가상 대기열(NetFunnel)로 감싼다. 평시에는 서버가 대기열 없이
   답하지만, 예약 개시 시각 같은 피크에 막히는지는 아직 확인하지 못했다. 막히면 표가 없는 응답이
   오고, 파서가 빈 기간이 아니라 실패로 던진다 — 화면에는 `조회에 실패했어요`가 뜬다.
+- 지도 바탕은 [OpenFreeMap](https://openfreemap.org)의 positron 스타일이다. 키가 없고 무료이며,
+  출처 표기(OpenFreeMap · OpenMapTiles · OpenStreetMap)를 지도 구석의 ⓘ에 접어 둔다. 지명은
+  스타일을 받아 `name:ko` 로 바꿔 단다.
+- maplibre-gl v6 의 웹 워커는 `public/maplibre/` 에서 읽는다. `pnpm install` 의 postinstall
+  (`scripts/copy-maplibre-worker.mjs`)이 node_modules 에서 복사하고, 커밋하지 않는다. 라이브러리가
+  워커를 `import.meta.url` 기준으로 찾는데, 번들러가 청크를 옮기면 그 경로가 깨지기 때문이다.
 - 실제 예약·결제는 원 사이트에서만 이뤄진다. 이 앱은 읽기만 한다.

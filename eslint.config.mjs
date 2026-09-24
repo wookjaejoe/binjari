@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 설치 때 복사하는 maplibre 워커. 빌드된 라이브러리 그대로다.
+    "public/maplibre/**",
   ]),
 ]);
 

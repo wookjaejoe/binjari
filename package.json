@@ -9,11 +9,13 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "node scripts/copy-maplibre-worker.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.102.8",
     "date-fns": "^4.4.0",
+    "maplibre-gl": "^6.11.2",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",

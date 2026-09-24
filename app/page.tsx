@@ -13,7 +13,7 @@ import {
 import { DayDetail } from "@/components/DayDetail";
 import { DowSheet, NightsSheet, dowLabel } from "@/components/FilterSheets";
 import { Legend } from "@/components/Legend";
-import { Sheet, anchorOf, type SheetAnchor } from "@/components/Sheet";
+import { Sheet, WIDE_POPOVER_WIDTH, anchorOf, type SheetAnchor } from "@/components/Sheet";
 import { TargetPicker } from "@/components/TargetPicker";
 import { Empty, Spinner, Switch, cx } from "@/components/ui";
 import { DateMatrix } from "@/components/views/DateMatrix";
@@ -113,7 +113,8 @@ export default function Page() {
   // 조건 버튼으로 열면 데스크톱에서 그 버튼 아래에 붙는다. 다른 곳에서 열면 null.
   const [anchor, setAnchor] = useState<SheetAnchor | null>(null);
   const openSheet = (kind: SheetKind, from?: HTMLElement) => {
-    setAnchor(from ? anchorOf(from) : null);
+    // 대상 시트는 지도를 품어 넓다. 넓은 폭으로 자리를 잡아야 오른쪽 끝을 넘지 않는다.
+    setAnchor(from ? anchorOf(from, kind === "target" ? WIDE_POPOVER_WIDTH : undefined) : null);
     setSheet(kind);
   };
   const [selected, setSelected] = useState<{
@@ -434,6 +435,7 @@ export default function Page() {
         onClose={() => setSheet(null)}
         title="조회 대상"
         anchor={anchor}
+        wide
       >
         <TargetPicker data={pickerData} />
       </Sheet>

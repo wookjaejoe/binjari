@@ -6,15 +6,17 @@ import { cx } from "@/components/ui";
 
 /** 데스크톱 팝오버 폭. sm:max-w-md 와 같아야 한다. */
 const POPOVER_WIDTH = 448;
+/** 넓은 팝오버(지도를 품은 대상 시트) 폭. sm:max-w-3xl 과 같아야 한다. */
+export const WIDE_POPOVER_WIDTH = 768;
 
 /** 시트를 연 버튼의 위치. 데스크톱에서 그 아래에 붙인다. */
 export type SheetAnchor = { top: number; left: number };
 
-export function anchorOf(element: HTMLElement): SheetAnchor {
+export function anchorOf(element: HTMLElement, width = POPOVER_WIDTH): SheetAnchor {
   const rect = element.getBoundingClientRect();
   return {
     top: rect.bottom + 8,
-    left: Math.max(16, Math.min(rect.left, window.innerWidth - POPOVER_WIDTH - 16)),
+    left: Math.max(16, Math.min(rect.left, window.innerWidth - width - 16)),
   };
 }
 
@@ -24,6 +26,10 @@ export function anchorOf(element: HTMLElement): SheetAnchor {
  * 데스크톱에서 `anchor`가 있으면 그 버튼 아래에 팝오버로 붙는다. 왼쪽 위 버튼을 눌렀는데
  * 화면 한가운데에 뜨면 무엇을 눌러 열린 것인지 끊긴다. 조건 버튼처럼 연 자리가 분명한
  * 시트가 여기에 해당한다. `anchor`가 없으면(날짜 상세, 빈 상태의 버튼) 가운데로 올라온다.
+ *
+ * `wide`는 지도를 품은 시트다. 높이를 내용이 아니라 화면에 맞춰 고정하고(검색으로 목록이
+ * 줄어도 지도가 튀지 않게), 스크롤은 안쪽이 맡는다. 데스크톱에서는 지도와 목록을 나란히 둘
+ * 만큼 넓다.
  */
 export function Sheet({
   open,
@@ -33,6 +39,7 @@ export function Sheet({
   children,
   footer,
   anchor,
+  wide = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -41,6 +48,7 @@ export function Sheet({
   children: ReactNode;
   footer?: ReactNode;
   anchor?: SheetAnchor | null;
+  wide?: boolean;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -80,12 +88,16 @@ export function Sheet({
             : undefined
         }
         className={cx(
-          "relative flex max-h-[88vh] w-full flex-col rounded-t-lg border border-line bg-surface elev-2",
+          "relative flex w-full flex-col rounded-t-lg border border-line bg-surface elev-2",
+          // 지도가 모서리를 넘지 않게 자른다.
+          wide ? "h-[88vh] overflow-hidden" : "max-h-[88vh]",
           // 데스크톱은 카드와 같은 언어로 — radius-xl, 보더 없이 그림자만(DESIGN.md 1.3).
           "sm:rounded-xl sm:border-transparent",
-          anchor
-            ? "sm:absolute sm:top-(--sheet-top) sm:left-(--sheet-left) sm:max-h-[calc(100dvh-var(--sheet-top)-24px)] sm:max-w-md"
-            : "sm:max-h-[80vh] sm:max-w-lg",
+          anchor && "sm:absolute sm:top-(--sheet-top) sm:left-(--sheet-left)",
+          anchor && !wide && "sm:max-h-[calc(100dvh-var(--sheet-top)-24px)] sm:max-w-md",
+          anchor && wide && "sm:h-[min(calc(100dvh-var(--sheet-top)-24px),48rem)] sm:max-w-[min(48rem,calc(100vw-2rem))]",
+          !anchor && !wide && "sm:max-h-[80vh] sm:max-w-lg",
+          !anchor && wide && "sm:h-[80vh] sm:max-w-3xl",
           "sheet-in",
         )}
       >
@@ -114,7 +126,7 @@ export function Sheet({
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className={cx("min-h-0 flex-1", !wide && "overflow-y-auto overscroll-contain")}>
           {children}
         </div>
 

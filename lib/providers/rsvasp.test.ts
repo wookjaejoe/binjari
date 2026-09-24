@@ -37,6 +37,15 @@ describe("parseZones", () => {
     ]);
   });
 
+  it("셀렉트에 id·class 가 먼저 와도 읽는다(문장대)", () => {
+    const html = `<select id="util_select" class="util_select" name="man" title="시설 선택">
+      <option value="1" selected="selected">A구역</option> <option value="2">B구역</option> </select>`;
+    expect(parseZones(html)).toEqual([
+      { man: "1", name: "A구역" },
+      { man: "2", name: "B구역" },
+    ]);
+  });
+
   it("셀렉트가 없으면 탭 버튼 폼에서 읽는다", () => {
     expect(parseZones(JIGYEONG)).toEqual([
       { man: "1", name: "캐라반" },
@@ -54,6 +63,14 @@ describe("parseCalendar", () => {
       "2026-09-27": { "A구역01": false, "A구역02": true },
       "2026-09-28": { "A구역01": true, "A구역02": true },
     });
+  });
+
+  it("빈 사이트의 그림 alt 가 달라도(문장대 \"캠핑장\") 예약 폼 버튼이면 빈 것이다", () => {
+    const html = `<span class="date">2026년 10월</span>
+      <table class="calendar"><tbody><tr><td>1<br />
+      <form action="reservation.asp?location=002_02" method="post" name="form0"><input type="hidden" name="rsv_info" value="A#@3301#@2026-10-01#@2026-10-02#@0#@0" /><button type="submit" class="f_name"><img src="/images/reservation/icon2.jpg" alt="캠핑장" /> C_01</button></form>
+      <span class="rsv_no"><img src="/images/reservation/wan.gif" alt="예약완료" />C_03</span><br /></td></tr></tbody></table>`;
+    expect(parseCalendar(html).days).toEqual({ "2026-10-01": { C_01: true, C_03: false } });
   });
 
   it("범례의 예약가능 그림은 날짜로 읽지 않는다", () => {

@@ -646,6 +646,13 @@
     "sido": "강원",
     "source": "gocamping:2794"
   },
+  "rsvasp:munjangdae": {
+    "lat": 36.5441356,
+    "lng": 127.9247206,
+    "address": "경상북도 상주시 화북면 상오리 573-4",
+    "sido": "경북",
+    "source": "gocamping:1141"
+  },
   "rsvasp:sangso": {
     "lat": 36.2373729,
     "lng": 127.4690661,

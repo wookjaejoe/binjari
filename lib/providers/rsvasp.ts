@@ -1,13 +1,13 @@
 import { MINUTE, memo } from "@/lib/cache";
-import { shiftISO } from "@/lib/date";
+import { shiftISO, todayISO } from "@/lib/date";
 import type { CampProvider, CampRef, Portal, Room, Zone, ZoneDay } from "@/lib/providers/types";
 
 /**
  * 한 업체가 여러 지자체 캠핑장에 깔아 준 옛 ASP 예약 화면(`reservation.asp?location=002`).
- * 캠핑장마다 도메인·포트가 다르고(:453, :456) 화면 모양도 조금씩 다르지만 뼈대가 같다.
+ * 캠핑장마다 도메인·포트가 다르고(:453, :455, :456) 화면 모양도 조금씩 다르지만 뼈대가 같다.
  *
  * 달력 한 장(구역 × 달)에 날짜마다 그 구역의 사이트가 전부 적혀 있다 — 예약할 수 있는 것은
- * `alt="예약가능"` 버튼, 끝난 것은 `alt="예약완료"` 그림. 예약을 받지 않는 날은 사이트 없이
+ * 예약 폼의 버튼, 끝난 것은 `alt="예약완료"` 그림. 예약을 받지 않는 날은 사이트 없이
  * `예약종료` 만 있다. 로그인 없이 온다(2026-09-25 실측). 구역은 `man` 값으로 갈린다.
  *
  * 달력은 1박 기준이다. 여러 박은 같은 사이트가 이어진 밤마다 비어 있는지로 읽는다. 포털의
@@ -39,6 +39,11 @@ export const RSVASP_CAMPS: AspCamp[] = [
     name: "대전 상소오토캠핑장",
     origin: "https://www.sangsocamping.kr:453",
   },
+  {
+    slug: "munjangdae",
+    name: "상주 문장대오토캠핑장",
+    origin: "https://www.mjdcamp.kr:455",
+  },
 ];
 
 const MAX_NIGHTS = 3;
@@ -63,7 +68,7 @@ const strip = (html: string) =>
 /** 구역 목록. 셀렉트(`<select name="man">`)로 주는 곳과 탭 버튼 폼으로 주는 곳이 있다. */
 export function parseZones(html: string): { man: string; name: string }[] {
   const page = squash(html);
-  const select = page.match(/<select name="man"[^>]*>(.*?)<\/select>/)?.[1];
+  const select = page.match(/<select[^>]*name="man"[^>]*>(.*?)<\/select>/)?.[1];
   if (select) {
     return [...select.matchAll(/<option value="(\d+)"[^>]*>(.*?)<\/option>/g)].map(([, man, name]) => ({
       man,
@@ -98,9 +103,14 @@ export function parseCalendar(html: string): AspMonth {
   for (const [, body] of table.matchAll(/<td[^>]*>(.*?)<\/td>(?=\s*(?:<td|<\/tr>))/g)) {
     const day = strip(body).match(/^(\d{1,2})/)?.[1];
     if (!day) continue;
+    // 빈 사이트는 예약 폼의 버튼이다(그림의 alt 는 곳마다 "예약가능"·"캠핑장"으로 다르다).
+    // 끝난 사이트는 alt="예약완료" 그림 뒤의 글자다.
     const sites: Record<string, boolean> = {};
-    for (const [, state, name] of body.matchAll(/alt="(예약가능|예약완료)"\s*\/?>\s*([^<]+)/g)) {
-      sites[name.replace(/\*/g, "").trim()] = state === "예약가능";
+    for (const [, name] of body.matchAll(/<button[^>]*>\s*<img[^>]*>\s*([^<]+)<\/button>/g)) {
+      sites[name.replace(/\*/g, "").trim()] = true;
+    }
+    for (const [, name] of body.matchAll(/alt="예약완료"\s*\/?>\s*([^<]+)/g)) {
+      sites[name.replace(/\*/g, "").trim()] = false;
     }
     // 사이트가 하나도 없으면(예약종료) 예약을 받지 않는 날이다.
     if (Object.keys(sites).length) days[`${month}-${day.padStart(2, "0")}`] = sites;
@@ -219,7 +229,11 @@ export const rsvasp: CampProvider = {
 
   async bookingWindow(_portal, camp) {
     const { byZone } = await calendar(camp);
-    const dates = [...new Set(Object.values(byZone).flatMap((days) => Object.keys(days)))].sort();
+    // 지난 날에도 끝난 사이트를 적어 두는 곳(문장대)이 있다. 오늘부터 센다.
+    const dates = [...new Set(Object.values(byZone).flatMap((days) => Object.keys(days)))]
+      .filter((date) => date >= todayISO())
+      .sort();
+    if (!dates.length) return null;
     return { start: dates[0], end: dates.at(-1)!, maxStay: MAX_NIGHTS, minStay: null };
   },
 

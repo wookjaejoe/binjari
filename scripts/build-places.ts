@@ -146,10 +146,16 @@ async function knpsAddress(kind: "C" | "S", deptId: string) {
  * - 승촌공원 캠핑장: 광주광역시 남구 승촌동(Xticket 캠핑장 이름·광주 남구 공원 안내)
  * - 울진 염전해변캠핑장: 고캠핑(100041)의 주소는 맞는데 좌표가 경기 가평 쪽을 가리킨다.
  *   주소로 다시 찾는다.
+ * - 울주 작천정별빛·작천정달빛: 신불산군립공원 작천정 계곡(삼남읍 교동리 — OpenStreetMap 은 아직
+ *   삼남면이다). 고캠핑(2641)에 좌표가 없다.
+ * - 울주 대운산하늘숲: 온양읍 운화리(울주군 야영장 안내·고캠핑 검색 결과).
  */
 const ADDRESSES: Record<string, string> = {
   "xticket:seungchon": "광주광역시 남구 승촌동",
   "maketicket:yeomjeon": "경상북도 울진군 근남면 수산리",
+  "ulju:jakcheonjeong-byeolbit": "울산광역시 울주군 삼남면 교동리",
+  "ulju:jakcheonjeong-dalbit": "울산광역시 울주군 삼남면 교동리",
+  "ulju:daeunsan": "울산광역시 울주군 온양읍 운화리",
 };
 
 /**
@@ -166,6 +172,7 @@ const GOCAMPING_IDS: Record<string, number> = {
   "suseong:jinbatgol": 7560,
   "asanfmc:gokgyocheon": 1993,
   "huyang:donggang": 6975,
+  "ulju:deungeok-alps": 7315,
 };
 
 const OVERPASS = [

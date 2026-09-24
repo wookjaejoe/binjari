@@ -7,6 +7,7 @@ import { remaining } from "@/lib/providers/gtdc";
 import { parseMakeTicket } from "@/lib/providers/maketicket";
 import { parseActDate } from "@/lib/providers/moonhwain";
 import { parseSuseong } from "@/lib/providers/suseong";
+import { parseUljuDay } from "@/lib/providers/ulju";
 import { parseYesanCalendar } from "@/lib/providers/yesan";
 
 describe("parseActDate (문화인)", () => {
@@ -158,5 +159,27 @@ describe("huyang (정선 동강전망·화암약수)", () => {
   it("빈 사이트가 없다는 경고는 없음이고, 목록도 경고도 없으면 실패다", () => {
     expect(parseHuyangDay(`<script>alert("예약 가능한 시설이 없습니다.")</script>`)).toEqual([]);
     expect(() => parseHuyangDay("<html></html>")).toThrow();
+  });
+});
+
+describe("parseUljuDay (울주)", () => {
+  it("사이트마다 구역·이름·예약 가능 여부를 읽는다", () => {
+    const body = {
+      result: "ok",
+      list: [
+        { CAMP_ID: "C0000090", NAME: "(일반)1.배롱나무", FACILITY_NAME: "카라반(일반) ", ISRESERVABLE: "Y" },
+        { CAMP_ID: "C0000091", NAME: "(일반)2.이팝나무", FACILITY_NAME: "카라반(일반) ", ISRESERVABLE: "N" },
+      ],
+    };
+    expect(parseUljuDay(body)).toEqual([
+      { id: "C0000090", name: "(일반)1.배롱나무", zone: "카라반(일반)", open: true },
+      { id: "C0000091", name: "(일반)2.이팝나무", zone: "카라반(일반)", open: false },
+    ]);
+  });
+
+  it("조회 범위 밖(booking_ended)과 목록 없음은 빈 목록이고, 그 밖의 답은 실패다", () => {
+    expect(parseUljuDay({ result: "booking_ended", msg: "예약은 현재 달과 다음 달까지만 조회 가능합니다." })).toEqual([]);
+    expect(parseUljuDay({ result: "no_list" })).toEqual([]);
+    expect(() => parseUljuDay({ result: "error" })).toThrow();
   });
 });

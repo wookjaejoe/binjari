@@ -9,6 +9,7 @@ import { moonhwain } from "@/lib/providers/moonhwain";
 import { pubcamping } from "@/lib/providers/pubcamping";
 import { rsvasp } from "@/lib/providers/rsvasp";
 import { suseong } from "@/lib/providers/suseong";
+import { ulju } from "@/lib/providers/ulju";
 import { xticket } from "@/lib/providers/xticket";
 import { yesan } from "@/lib/providers/yesan";
 import type { CampProvider, CampRef, Portal, ProviderId } from "@/lib/providers/types";
@@ -99,6 +100,12 @@ export const PORTALS: Portal[] = [
     label: "지자체 캠핑장",
     provider: "huyang",
   },
+  {
+    id: "ulju",
+    host: "camping.ulju.ulsan.kr",
+    label: "지자체 캠핑장",
+    provider: "ulju",
+  },
 ];
 
 const PROVIDERS: Record<ProviderId, CampProvider> = {
@@ -115,6 +122,7 @@ const PROVIDERS: Record<ProviderId, CampProvider> = {
   suseong,
   asanfmc,
   huyang,
+  ulju,
 };
 
 /** 자동 발견 목록에서 뺄 캠핑장, 또는 표시 이름을 다듬을 곳. */

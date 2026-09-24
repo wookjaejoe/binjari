@@ -576,6 +576,34 @@
     "sido": "대구",
     "source": "gocamping:7560"
   },
+  "ulju:daeunsan": {
+    "lat": 35.4188802,
+    "lng": 129.2807434,
+    "address": "울산광역시 울주군 온양읍 운화리",
+    "sido": "울산",
+    "source": "nominatim"
+  },
+  "ulju:deungeok-alps": {
+    "lat": 35.5533000773202,
+    "lng": 129.087852913897,
+    "address": "울산광역시 울주군 상북면 등억알프스리 309-1",
+    "sido": "울산",
+    "source": "gocamping:7315"
+  },
+  "ulju:jakcheonjeong-byeolbit": {
+    "lat": 35.5410878,
+    "lng": 129.1084083,
+    "address": "울산광역시 울주군 삼남면 교동리",
+    "sido": "울산",
+    "source": "nominatim"
+  },
+  "ulju:jakcheonjeong-dalbit": {
+    "lat": 35.5410878,
+    "lng": 129.1084083,
+    "address": "울산광역시 울주군 삼남면 교동리",
+    "sido": "울산",
+    "source": "nominatim"
+  },
   "xticket:dalseo-byeolbit": {
     "lat": 35.8232403786948,
     "lng": 128.557039480382,

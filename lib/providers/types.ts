@@ -11,7 +11,8 @@ export type ProviderId =
   | "gtdc"
   | "suseong"
   | "asanfmc"
-  | "huyang";
+  | "huyang"
+  | "ulju";
 
 export type Portal = {
   id: string;

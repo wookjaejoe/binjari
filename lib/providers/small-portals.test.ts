@@ -4,6 +4,7 @@ import { parseAsan } from "@/lib/providers/asanfmc";
 import { parseChangwonPage } from "@/lib/providers/changwon";
 import { parseDaejeo } from "@/lib/providers/daejeo";
 import { parseDptoCalendar, parseDptoMap } from "@/lib/providers/dpto";
+import { parseDssPage } from "@/lib/providers/dssiseol";
 import { parseGmuc } from "@/lib/providers/gmuc";
 import { parseHuyangCalendar, parseHuyangDay } from "@/lib/providers/huyang";
 import { remaining } from "@/lib/providers/gtdc";
@@ -232,5 +233,21 @@ describe("parseChangwonPage (창원 달천)", () => {
     expect(page.csrf).toBe("abc-123");
     expect(page.totals).toEqual({ siteCount: 26, caravanCount: 4, bgCount: 4 });
     expect([...page.finished]).toEqual(["2026-10-03", "2026-10-04"]);
+  });
+});
+
+describe("parseDssPage (달성 구지·강변)", () => {
+  it("마지막 체크인 날과 구역 셀렉트를 읽는다", () => {
+    const html = `<select id="acmdt_fclt_clsf_id" name="acmdt_fclt_clsf_id" title="캐라반 선택" class="select required">
+        <option value="DSS_ACMDT_FCLT_CLSF_00000001" selected="selected">캐라반 8인(낙동)</option>
+        <option value="DSS_ACMDT_FCLT_CLSF_00000002">캐라반 6인(달성)</option> </select>
+      <script> var maxStartDate = new Date('2026-10-31'); </script>`;
+    expect(parseDssPage(html)).toEqual({
+      lastCheckIn: "2026-10-31",
+      zones: [
+        { id: "DSS_ACMDT_FCLT_CLSF_00000001", name: "캐라반 8인(낙동)" },
+        { id: "DSS_ACMDT_FCLT_CLSF_00000002", name: "캐라반 6인(달성)" },
+      ],
+    });
   });
 });

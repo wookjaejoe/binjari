@@ -41,6 +41,20 @@
     "sido": "충남",
     "source": "gocamping:7889"
   },
+  "dssiseol:guji": {
+    "lat": 35.671999,
+    "lng": 128.371533,
+    "address": "대구광역시 달성군 구지면 구지서로 199",
+    "sido": "대구",
+    "source": "gocamping:550"
+  },
+  "dssiseol:river": {
+    "lat": 35.6727715693727,
+    "lng": 128.368177221338,
+    "address": "대구광역시 달성군 구지면 오설리 873",
+    "sido": "대구",
+    "source": "gocamping:549"
+  },
   "gmuc:dodeoksan": {
     "lat": 37.4592422,
     "lng": 126.8607682,

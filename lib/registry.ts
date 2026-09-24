@@ -2,6 +2,7 @@ import { asanfmc } from "@/lib/providers/asanfmc";
 import { changwon } from "@/lib/providers/changwon";
 import { daejeo } from "@/lib/providers/daejeo";
 import { dpto } from "@/lib/providers/dpto";
+import { dssiseol } from "@/lib/providers/dssiseol";
 import { gmuc } from "@/lib/providers/gmuc";
 import { gtdc } from "@/lib/providers/gtdc";
 import { huyang } from "@/lib/providers/huyang";
@@ -127,6 +128,12 @@ export const PORTALS: Portal[] = [
     label: "지자체 캠핑장",
     provider: "changwon",
   },
+  {
+    id: "dssiseol",
+    host: "yeyak.dssiseol.or.kr",
+    label: "지자체 캠핑장",
+    provider: "dssiseol",
+  },
 ];
 
 const PROVIDERS: Record<ProviderId, CampProvider> = {
@@ -147,6 +154,7 @@ const PROVIDERS: Record<ProviderId, CampProvider> = {
   dpto,
   daejeo,
   changwon,
+  dssiseol,
 };
 
 /** 자동 발견 목록에서 뺄 캠핑장, 또는 표시 이름을 다듬을 곳. */

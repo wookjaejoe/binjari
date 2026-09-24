@@ -146,12 +146,15 @@ describe("parseAsan (아산 곡교천)", () => {
 });
 
 describe("huyang (정선 동강전망·화암약수)", () => {
-  it("달력에서 예약을 받는 날(open)만 읽는다", () => {
+  it("달력에서 예약을 받는 날(open)만, 칸 안 폼의 숨은 날짜로 읽는다", () => {
+    const form = (d: string) =>
+      `<form action="reservation.asp?location=002_01" method="post"><input type="hidden" name="syyyy" value="2026" /><input type="hidden" name="smm" value="9" /><input type="hidden" name="sdd" value="${d}" /><input type="hidden" name="edd" value="0" />`;
     const html = `<li class="month">2026년 9월</li>
       <td class="close"><span class="day day_none">25</span></td>
-      <td class="open"><span class="day day_none">26</span><form action="reservation.asp?location=002_01"></form></td>
+      <td class="open"><span class="day day_none">26</span>${form("26")}<button class="facility_btn">26</button></form></td>
+      <td class="open">${form("27")}<button class="facility_btn" type="submit">27</button></form></td>
       <form method="post" action="/reservation.asp?location=002" name="form_next"></form>`;
-    expect(parseHuyangCalendar(html)).toEqual({ open: ["2026-09-26"], hasNext: true });
+    expect(parseHuyangCalendar(html)).toEqual({ open: ["2026-09-26", "2026-09-27"], hasNext: true });
   });
 
   it("날짜 목록에서 이름 칸만 읽고 요금 칸은 세지 않는다", () => {

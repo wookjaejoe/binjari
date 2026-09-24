@@ -139,6 +139,13 @@
     "sido": "강원",
     "source": "gocamping:6975"
   },
+  "huyang:hagisup": {
+    "lat": 36.3931999,
+    "lng": 127.3323078,
+    "address": "대전광역시 유성구 하기동 259",
+    "sido": "대전",
+    "source": "gocamping:8060"
+  },
   "huyang:hwaam": {
     "lat": 37.3292434027344,
     "lng": 128.785826853276,

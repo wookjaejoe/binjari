@@ -174,6 +174,7 @@ const GOCAMPING_IDS: Record<string, number> = {
   "suseong:jinbatgol": 7560,
   "asanfmc:gokgyocheon": 1993,
   "huyang:donggang": 6975,
+  "huyang:hagisup": 8060,
   "ulju:deungeok-alps": 7315,
   "dpto:waemok": 7889,
   "dpto:nanjido": 7507,

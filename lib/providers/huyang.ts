@@ -8,7 +8,8 @@ import type { CampProvider, CampRef, Portal, Room, Zone, ZoneDay } from "@/lib/p
  * 날짜를 누르면(`location=002_01`, POST) 그 일정에 예약할 수 있는 사이트와 요금이 나온다.
  * 그래서 사이트 수는 열린 날짜마다 따로 묻는다. 로그인 없이 온다(2026-09-25 실측).
  *
- * - 캠핑장은 `wloc`, 구역은 `man` 으로 갈린다(구역 탭이 없는 곳은 1 하나).
+ * - 캠핑장은 `wloc`, 구역은 `man` 으로 갈린다(구역 탭이 없는 곳은 1 하나). 캠핑장 하나짜리 서버(하기숲)는
+ *   `wloc` 이 없다.
  * - 여러 박은 포털이 직접 답한다 — 달력 위 "예약기간" 라디오가 `edd`(0=1박2일 … 3=4박5일)를 바꾼다.
  *   그보다 길면 없음이다.
  * - 날짜 목록 POST 는 달력 화면을 Referer 로 보내야 하고, 세션 쿠키를 같이 보낸다.
@@ -20,7 +21,8 @@ type HuyangCamp = {
   slug: string;
   name: string;
   origin: string;
-  wloc: string;
+  /** 한 서버에 캠핑장이 여럿일 때만 있다(정선군시설관리공단). */
+  wloc?: string;
   zones: { man: string; name: string }[];
 };
 
@@ -43,6 +45,13 @@ export const HUYANG_CAMPS: HuyangCamp[] = [
       { man: "3", name: "숙박시설" },
     ],
   },
+  {
+    // 대전 유성구. 같은 화면을 자기 도메인(:454)에 올렸다. 캠핑장 하나라 wloc 이 없다.
+    slug: "hagisup",
+    name: "대전 하기숲 캠핑장",
+    origin: "https://www.hgscamp.kr:454",
+    zones: [{ man: "1", name: "전체" }],
+  },
 ];
 
 const MAX_NIGHTS = 4;
@@ -62,15 +71,18 @@ const campOf = (camp: CampRef) => {
 
 const squash = (html: string) => html.replace(/\s+/g, " ");
 
-/** 달력 한 장 → 예약을 받는 날(open). 달은 "2026년 9월" 에서 읽는다. */
+/**
+ * 달력 한 장 → 예약을 받는 날(open). 날짜는 칸 안 폼의 숨은 값(syyyy·smm·sdd)에서 읽는다 —
+ * 칸에 날짜 글자를 따로 적는 곳(정선)과 버튼 글자로만 적는 곳(하기숲)이 있어서다.
+ */
 export function parseHuyangCalendar(html: string): { open: string[]; hasNext: boolean } {
   const page = squash(html);
-  const head = page.match(/<li class="month">(\d{4})년 (\d{1,2})월<\/li>/);
-  if (!head) throw new Error("예약 달력을 찾지 못했습니다");
-  const month = `${head[1]}-${head[2].padStart(2, "0")}`;
-  const open = [...page.matchAll(/<td class="open"><span class="day[^"]*">(\d{1,2})<\/span>/g)].map(
-    ([, day]) => `${month}-${day.padStart(2, "0")}`,
-  );
+  if (!/<li class="month">\d{4}년 \d{1,2}월<\/li>/.test(page)) throw new Error("예약 달력을 찾지 못했습니다");
+  const open = [...page.matchAll(/<td class="open">(.*?)<\/td>/g)].flatMap(([, cell]) => {
+    const value = (name: string) => cell.match(new RegExp(`name="${name}" value="(\\d+)"`))?.[1];
+    const [y, m, d] = [value("syyyy"), value("smm"), value("sdd")];
+    return y && m && d ? [`${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`] : [];
+  });
   return { open, hasNext: /name="form_next"/.test(page) };
 }
 
@@ -95,7 +107,7 @@ type Session = { cookie: string; referer: string };
 function session(camp: CampRef): Promise<Session> {
   return memo(`portal:${camp.id}:session`, 5 * MINUTE, async () => {
     const { origin, wloc } = campOf(camp);
-    const referer = `${origin}/reservation.asp?location=002&wloc=${wloc}`;
+    const referer = `${origin}/reservation.asp?location=002${wloc ? `&wloc=${wloc}` : ""}`;
     const res = await limit(() => fetch(referer, { headers: { "User-Agent": UA }, cache: "no-store" }));
     if (!res.ok) throw new Error(`${referer} → HTTP ${res.status}`);
     const cookie = res.headers
@@ -119,7 +131,7 @@ async function post(camp: CampRef, location: string, fields: Record<string, stri
         Referer: referer,
         ...(cookie && { Cookie: cookie }),
       },
-      body: new URLSearchParams({ ...fields, wloc }),
+      body: new URLSearchParams({ ...fields, ...(wloc && { wloc }) }),
       cache: "no-store",
     }),
   );
@@ -213,6 +225,6 @@ export const huyang: CampProvider = {
 
   bookingTarget(_portal, camp) {
     const { origin, wloc } = campOf(camp);
-    return { url: `${origin}/reservation.asp`, method: "GET", fields: { location: "002", wloc } };
+    return { url: `${origin}/reservation.asp`, method: "GET", fields: { location: "002", ...(wloc && { wloc }) } };
   },
 };

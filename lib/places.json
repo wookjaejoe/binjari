@@ -695,6 +695,13 @@
     "sido": "서울",
     "source": "gocamping:8135"
   },
+  "yeongdo:marino": {
+    "lat": 35.1021476,
+    "lng": 129.061384,
+    "address": "부산광역시 영도구 청학동 330-119",
+    "sido": "부산",
+    "source": "gocamping:100620"
+  },
   "yesan:yedang": {
     "lat": 36.6366941948496,
     "lng": 126.798068670494,

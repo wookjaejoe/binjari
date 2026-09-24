@@ -16,7 +16,8 @@ export type ProviderId =
   | "dpto"
   | "daejeo"
   | "changwon"
-  | "dssiseol";
+  | "dssiseol"
+  | "yeongdo";
 
 export type Portal = {
   id: string;

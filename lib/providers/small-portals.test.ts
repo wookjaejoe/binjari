@@ -12,6 +12,7 @@ import { parseMakeTicket } from "@/lib/providers/maketicket";
 import { parseActDate } from "@/lib/providers/moonhwain";
 import { parseSuseong } from "@/lib/providers/suseong";
 import { parseUljuDay } from "@/lib/providers/ulju";
+import { parseYeongdoCalendar, parseYeongdoSites } from "@/lib/providers/yeongdo";
 import { parseYesanCalendar } from "@/lib/providers/yesan";
 
 describe("parseActDate (문화인)", () => {
@@ -249,5 +250,19 @@ describe("parseDssPage (달성 구지·강변)", () => {
         { id: "DSS_ACMDT_FCLT_CLSF_00000002", name: "캐라반 6인(달성)" },
       ],
     });
+  });
+});
+
+describe("영도 마리노", () => {
+  it("달력에서 예약을 받는 날(able-apply)만 읽는다", () => {
+    const html = `<td class="unselect date-td" id="date24" data-index="23" data-date-string="2026-09-24"></td>
+      <td class="able-apply date-td" id="date25" data-index="24" data-date-string="2026-09-25"></td>`;
+    expect(parseYeongdoCalendar(html)).toEqual(["2026-09-25"]);
+  });
+
+  it("사이트 목록에서 예약가능(siteCode)과 예약불가(unselect)를 가른다", () => {
+    const html = `<ol class="autosite"> <li class="unselect n1"> <button type="button" class="b1" title="예약불가" disabled="disabled" }>오토 1</button> </li>
+      <li class="siteCode n3" id="siteCodeS203" data-site-code="S203" data-site-title="3번"> <button type="button" class="b1" title="예약가능"> 오토 3 </button> </li></ol>`;
+    expect(parseYeongdoSites(html)).toEqual({ "오토 1": false, "오토 3": true });
   });
 });

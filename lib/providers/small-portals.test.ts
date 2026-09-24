@@ -5,6 +5,7 @@ import { parseChangwonPage } from "@/lib/providers/changwon";
 import { parseDaejeo } from "@/lib/providers/daejeo";
 import { parseDptoCalendar, parseDptoMap } from "@/lib/providers/dpto";
 import { parseDssPage } from "@/lib/providers/dssiseol";
+import { parseGhssList, parseGhssPage } from "@/lib/providers/ghss";
 import { parseGmuc } from "@/lib/providers/gmuc";
 import { parseHuyangCalendar, parseHuyangDay } from "@/lib/providers/huyang";
 import { remaining } from "@/lib/providers/gtdc";
@@ -264,5 +265,24 @@ describe("영도 마리노", () => {
     const html = `<ol class="autosite"> <li class="unselect n1"> <button type="button" class="b1" title="예약불가" disabled="disabled" }>오토 1</button> </li>
       <li class="siteCode n3" id="siteCodeS203" data-site-code="S203" data-site-title="3번"> <button type="button" class="b1" title="예약가능"> 오토 3 </button> </li></ol>`;
     expect(parseYeongdoSites(html)).toEqual({ "오토 1": false, "오토 3": true });
+  });
+});
+
+describe("강화 함허동천", () => {
+  it("예약 화면에서 기간(after_day·finish_date)·구역·운영중지 기간을 읽는다", () => {
+    const html = `<select id="fcgp_id" name="fcgp_id"> <option value="">전체</option> <option value="CAMP1TH">제1야영장</option> </select>
+      <script> var after_day = 2; var finish_date = '2026-11-01';
+      var dateRanges = [{ 'start': '2026-10-12', 'end': '2026-10-13' }]; </script>`;
+    expect(parseGhssPage(html, "2026-09-25")).toEqual({
+      start: "2026-09-27",
+      lastCheckIn: "2026-10-31",
+      zones: [{ id: "CAMP1TH", name: "제1야영장" }],
+      stops: [{ start: "2026-10-12", end: "2026-10-13" }],
+    });
+  });
+
+  it("쪽마다 결제금액과 전체 쪽 수를 읽는다", () => {
+    const html = `<dd>결제금액 : 33,000원</dd> <dd>결제금액 : 35,000원</dd> <script> totalPageCount = 6; </script>`;
+    expect(parseGhssList(html)).toEqual({ amounts: [33000, 35000], pages: 6 });
   });
 });

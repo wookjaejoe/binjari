@@ -55,6 +55,13 @@
     "sido": "대구",
     "source": "gocamping:549"
   },
+  "ghss:hamheo": {
+    "lat": 37.6113333162471,
+    "lng": 126.452610073585,
+    "address": "인천광역시 강화군 화도면 해안남로1196번길 38",
+    "sido": "인천",
+    "source": "gocamping:3436"
+  },
   "gmuc:dodeoksan": {
     "lat": 37.4592422,
     "lng": 126.8607682,

@@ -16,6 +16,7 @@ import type { CampProvider, CampRef, Portal, ZoneDay } from "@/lib/providers/typ
 export const MOONHWAIN_CAMPS: { slug: string; name: string; host: string; bid: string }[] = [
   { slug: "sejong-jeonwolsan", name: "세종 전월산캠핑장", host: "sjfmc.moonhwain.net:451", bid: "jeonwolsan" },
   { slug: "gumi-nakdonggang", name: "구미 낙동강캠핑장", host: "gmcamping.moonhwain.net:451", bid: "gmcamp" },
+  { slug: "sejong-hapgang", name: "세종 합강캠핑장", host: "sjfmc.moonhwain.net:451", bid: "hapgang" },
   // 양산시설관리공단. 자기 도메인에 문화인 화면을 올렸다.
   { slug: "yangsan-hwangsan", name: "양산 황산 국민여가캠핑장", host: "hscamping.yssisul.or.kr:453", bid: "hscamping" },
 ];

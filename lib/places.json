@@ -611,6 +611,13 @@
     "sido": "경북",
     "source": "gocamping:102084"
   },
+  "moonhwain:sejong-hapgang": {
+    "lat": 36.5174763515632,
+    "lng": 127.337182917433,
+    "address": "세종특별자치시 태산로 329 (세종동)",
+    "sido": "세종",
+    "source": "gocamping:1698"
+  },
   "moonhwain:sejong-jeonwolsan": {
     "lat": 36.5140596126976,
     "lng": 127.300259933319,

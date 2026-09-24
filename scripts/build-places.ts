@@ -170,6 +170,7 @@ const GOCAMPING_IDS: Record<string, number> = {
   "maketicket:gwanggyo": 320,
   "gtdc:yeongok": 2185,
   "moonhwain:yangsan-hwangsan": 3578,
+  "moonhwain:sejong-hapgang": 1698,
   "suseong:jinbatgol": 7560,
   "asanfmc:gokgyocheon": 1993,
   "huyang:donggang": 6975,

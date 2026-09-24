@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { Sheet } from "@/components/Sheet";
 import { MonthCalendars, WeekHeatmap, type StateOf } from "@/components/ZoneCalendars";
@@ -105,6 +105,20 @@ export function ZoneCards({ rows, dates, data, selection, onPick }: Props) {
  * 카드 전체가 달력 시트를 여는 버튼이다. "전체 보기" 같은 문구는 두지 않는다 — 떠 있는
  * 카드는 그 자체로 누를 것처럼 생겼고, 누르면 달력이 열린다.
  */
+/**
+ * 임시 비교(2026-09-25): 주소에 `?cards=compact` 를 붙이면 사진 없는 구역 카드가 검은 판 대신
+ * 이름 머리만 단다. 사진을 안 주는 포털이 늘어 카드 줄이 "사진 없음" 판으로 채워졌다. 사용자가
+ * 고르면 이 스위치를 지운다.
+ */
+const noopSubscribe = () => () => {};
+function useCompactCards() {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => new URLSearchParams(window.location.search).get("cards") === "compact",
+    () => false,
+  );
+}
+
 function ZoneCard({
   row,
   span,
@@ -116,6 +130,7 @@ function ZoneCard({
   stateOf: StateOf;
   onOpen: () => void;
 }) {
+  const compact = useCompactCards() && !row.photo;
   return (
     <li className="w-60 shrink-0 snap-start sm:w-auto">
       <button
@@ -123,19 +138,26 @@ function ZoneCard({
         onClick={onOpen}
         className="block w-full rounded-xl bg-surface p-1.5 text-left elev-card transition-transform active:scale-99"
       >
-        {/* 사진 위 글자는 아래쪽 ink 그라데이션 위에만 얹는다. 포털 사진은 밝기가 제각각이다. */}
-        <div className="relative h-36 overflow-hidden rounded-lg bg-ink">
-          {row.photo ? (
-            <Image src={row.photo} alt="" fill sizes="320px" className="object-cover" />
-          ) : (
-            // 포털이 사진을 안 준 구역이다(MASTER_IMAGE 가 빈 값). 깨진 이미지로 읽히지 않게 말한다.
-            <span className="absolute top-2.5 left-3 text-xs text-on-ink/45">사진 없음</span>
-          )}
-          <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-ink/80 to-transparent px-3 pt-8 pb-2.5 text-on-ink">
+        {compact ? (
+          <div className="rounded-lg bg-surface-2 px-3 py-2.5">
             <p className="truncate text-base font-bold">{row.label}</p>
-            {row.ground && <p className="truncate text-xs text-on-ink/75">{row.ground}</p>}
+            {row.ground && <p className="truncate text-xs text-muted">{row.ground}</p>}
           </div>
-        </div>
+        ) : (
+          // 사진 위 글자는 아래쪽 ink 그라데이션 위에만 얹는다. 포털 사진은 밝기가 제각각이다.
+          <div className="relative h-36 overflow-hidden rounded-lg bg-ink">
+            {row.photo ? (
+              <Image src={row.photo} alt="" fill sizes="320px" className="object-cover" />
+            ) : (
+              // 포털이 사진을 안 준 구역이다(MASTER_IMAGE 가 빈 값). 깨진 이미지로 읽히지 않게 말한다.
+              <span className="absolute top-2.5 left-3 text-xs text-on-ink/45">사진 없음</span>
+            )}
+            <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-ink/80 to-transparent px-3 pt-8 pb-2.5 text-on-ink">
+              <p className="truncate text-base font-bold">{row.label}</p>
+              {row.ground && <p className="truncate text-xs text-on-ink/75">{row.ground}</p>}
+            </div>
+          </div>
+        )}
 
         <div className="px-2 pt-3 pb-2">
           <WeekHeatmap span={span} stateOf={stateOf} />

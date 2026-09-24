@@ -1,4 +1,4 @@
-export type ProviderId = "pubcamping";
+export type ProviderId = "pubcamping" | "knps";
 
 export type Portal = {
   id: string;
@@ -49,7 +49,8 @@ export type Room = {
   no: string;
   zoneNo: string;
   name: string;
-  amount: number;
+  /** 포털이 요금을 한 번도 보여주지 않은 객실은 null 이다(국립공원: 기간 내내 예약이 끝난 영지). */
+  amount: number | null;
   size: string;
 };
 
@@ -58,14 +59,20 @@ export type RoomDay = {
   available: string[];
 };
 
+/** 예약 페이지로 넘기는 폼. 일정을 POST 로만 받는 포털이 있어 링크가 아니라 폼이다. */
 export type BookingTarget = {
   url: string;
-  method: "POST";
+  method: "GET" | "POST";
   fields: Record<string, string>;
 };
 
 export interface CampProvider {
   id: ProviderId;
+  /**
+   * 예약 기간을 가볍게 물을 수 있는가. 아니면 캠핑장 목록을 열 때 묻지 않고, 캠핑장을
+   * 켰을 때 스캔이 받아 온다(국립공원은 기간을 알려면 5MB 표를 받아야 한다).
+   */
+  cheapWindow: boolean;
   listCamps(portal: Portal): Promise<CampRef[]>;
   bookingWindow(portal: Portal, camp: CampRef): Promise<BookingWindow | null>;
   zoneDay(

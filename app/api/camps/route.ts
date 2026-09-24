@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { listAllCamps } from "@/lib/registry";
+import { getPortal, listAllCamps } from "@/lib/registry";
 import { campProfile } from "@/lib/scan";
 import type { CampProfile } from "@/lib/types";
 
@@ -21,7 +21,7 @@ export async function GET() {
             id: camp.id,
             name: camp.name,
             portalId: camp.portalId,
-            portalLabel: "",
+            portalLabel: getPortal(camp.portalId).label,
             window: null,
             error: error instanceof Error ? error.message : String(error),
           };

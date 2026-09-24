@@ -303,7 +303,7 @@ export default function Page() {
           <div className="mx-auto max-w-3xl px-5 pt-4 pb-14">
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold">빈자리</h1>
-              <span className="text-xs text-on-ink/55">고성군 공공캠핑장</span>
+              <span className="text-xs text-on-ink/55">공공캠핑장 · 국립공원 야영장</span>
               <div className="ml-auto flex items-center gap-1 text-xs text-on-ink/55">
                 {scanning ? (
                   <Spinner onInk />
@@ -423,7 +423,8 @@ export default function Page() {
             </div>
 
             <p className="px-5 text-center text-xs leading-relaxed text-subtle">
-              pubcamping.kr의 공개 정보예요. 예약과 결제는 원 사이트에서 해요.
+              고성군 공공캠핑장과 국립공원 예약 사이트의 공개 정보예요. 예약과 결제는 원
+              사이트에서 해요.
             </p>
           </div>
         </div>

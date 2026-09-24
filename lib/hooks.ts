@@ -53,7 +53,7 @@ export function useRoomScans(
         queryKey: ["scan", "rooms", campId, nights, key, nonce],
         queryFn: () =>
           getJson<RoomScan>(
-            `/api/scan/rooms?camp=${encodeURIComponent(campId)}&nights=${nights}&zones=${key}`,
+            `/api/scan/rooms?camp=${encodeURIComponent(campId)}&nights=${nights}&zones=${encodeURIComponent(key)}`,
           ),
         refetchInterval,
       };

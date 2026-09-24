@@ -25,7 +25,7 @@ function BookingButton({
   }
 
   return (
-    <form method="post" action={target?.url ?? ""} target="_blank">
+    <form method={target?.method ?? "post"} action={target?.url ?? ""} target="_blank">
       {Object.entries(target?.fields ?? {}).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}

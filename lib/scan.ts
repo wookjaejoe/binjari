@@ -151,6 +151,7 @@ export function campProfile(campId: string): Promise<CampProfile> {
       portalId: portal.id,
       portalLabel: portal.label,
     };
+    if (!provider.cheapWindow) return base;
 
     let window: BookingWindow | null;
     try {
@@ -167,7 +168,9 @@ export function campProfile(campId: string): Promise<CampProfile> {
   });
 }
 
+/** 스캔 결과와, 어댑터가 `portal:<campId>` 로 캐시해 둔 원본(국립공원 영지 표)을 같이 지운다. */
 export function dropScanCache(campId?: string) {
   invalidate(campId ? `scan:zones:${campId}` : "scan:");
+  invalidate(campId ? `portal:${campId}` : "portal:");
   if (campId) invalidate(`scan:rooms:${campId}`);
 }

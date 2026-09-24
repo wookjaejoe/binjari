@@ -1,8 +1,9 @@
+import { knps } from "@/lib/providers/knps";
 import { pubcamping } from "@/lib/providers/pubcamping";
 import type { CampProvider, CampRef, Portal, ProviderId } from "@/lib/providers/types";
 
 /**
- * 예약 포털 등록부. 새 지역/기관을 추가하려면 여기에 한 줄 더한다.
+ * 예약 포털 등록부. 포털마다 예약 시스템이 달라 어댑터(provider)가 따로 있다.
  * 개별 캠핑장은 포털에서 자동으로 발견하므로 따로 적지 않는다.
  */
 export const PORTALS: Portal[] = [
@@ -12,10 +13,17 @@ export const PORTALS: Portal[] = [
     label: "고성군",
     provider: "pubcamping",
   },
+  {
+    id: "knps",
+    host: "reservation.knps.or.kr",
+    label: "국립공원",
+    provider: "knps",
+  },
 ];
 
 const PROVIDERS: Record<ProviderId, CampProvider> = {
   pubcamping,
+  knps,
 };
 
 /** 자동 발견 목록에서 뺄 캠핑장, 또는 표시 이름을 다듬을 곳. */
@@ -33,8 +41,9 @@ export function getProvider(portal: Portal): CampProvider {
   return PROVIDERS[portal.provider];
 }
 
+/** 포털 하나가 목록을 못 주면 그 포털만 빠진다. 다른 포털의 캠핑장까지 막지 않는다. */
 export async function listAllCamps(): Promise<CampRef[]> {
-  const groups = await Promise.all(
+  const groups = await Promise.allSettled(
     PORTALS.map(async (portal) => {
       const camps = await getProvider(portal).listCamps(portal);
       return camps
@@ -42,7 +51,10 @@ export async function listAllCamps(): Promise<CampRef[]> {
         .filter((camp) => !CAMP_OVERRIDES[camp.id]?.hidden);
     }),
   );
-  return groups.flat();
+  const found = groups.flatMap((group) => (group.status === "fulfilled" ? group.value : []));
+  const failed = groups.find((group) => group.status === "rejected");
+  if (!found.length && failed) throw failed.reason;
+  return found;
 }
 
 export async function resolveCamp(campId: string) {

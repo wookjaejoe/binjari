@@ -35,7 +35,11 @@ export type CampProfile = {
   name: string;
   portalId: string;
   portalLabel: string;
-  window: BookingWindow | null;
+  /**
+   * undefined 면 아직 묻지 않은 것이다 — 기간을 묻는 값이 비싼 포털은 캠핑장을 켰을 때
+   * 스캔이 묻는다(ZoneScan.window). null 이면 물었는데 기간이 없거나 실패했다.
+   */
+  window?: BookingWindow | null;
   /** window 가 null 일 때 그 사유. HTTP 상태처럼 사실만 적는다. */
   error?: string;
 };

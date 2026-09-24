@@ -8,8 +8,12 @@ import { formatMonthDay } from "@/lib/date";
 import type { BookingWindow } from "@/lib/types";
 import { useSelection } from "@/store/selection";
 
-/** 포털이 알려준 기간과 한도를 그대로 적는다. 없는 값은 조각째 뺀다. */
-function windowLabel(window: BookingWindow | null, error?: string) {
+/**
+ * 포털이 알려준 기간과 한도를 그대로 적는다. 없는 값은 조각째 뺀다.
+ * 아직 묻지 않았으면(undefined) 아무것도 적지 않는다 — 국립공원은 켜야 묻는다.
+ */
+function windowLabel(window: BookingWindow | null | undefined, error?: string) {
+  if (window === undefined) return null;
   if (!window) return error ? "조회 실패" : "예약 기간 없음";
   return [
     `${formatMonthDay(window.start)}–${formatMonthDay(window.end)}`,
@@ -97,16 +101,26 @@ export function TargetPicker({ data }: { data: CampData[] }) {
       </div>
 
       <ul className="pb-2">
-        {visible.map(({ camp, zoneScan, roomScan }) => {
+        {visible.map(({ camp, zoneScan, roomScan }, index) => {
           const picks = selection[camp.id];
           const campOpen = expanded[camp.id] ?? false;
           const zones = zoneScan?.zones ?? [];
           const allOn =
             zones.length > 0 && zones.every((z) => picks?.[z.no]?.mode === "all");
           const campState = !picks ? "off" : allOn ? "on" : "partial";
+          // 스캔이 받은 기간이 더 새롭다. 국립공원은 이것밖에 없다.
+          const period = windowLabel(zoneScan ? zoneScan.window : camp.window, camp.error);
+          // 포털이 바뀌는 곳에 머리를 단다. 목록은 포털 순서 그대로다.
+          const portalHead =
+            visible[index - 1]?.camp.portalId !== camp.portalId ? camp.portalLabel : null;
 
           return (
             <li key={camp.id} className="border-b border-line last:border-0">
+              {portalHead && (
+                <h3 className="bg-surface-2 px-4 pt-4 pb-1.5 text-xs font-semibold text-muted">
+                  {portalHead}
+                </h3>
+              )}
               <div className="flex items-center gap-2.5 px-4 py-2.5">
                 <Check
                   state={campState}
@@ -128,9 +142,11 @@ export function TargetPicker({ data }: { data: CampData[] }) {
                     <span className="block truncate text-base font-medium">
                       {camp.name}
                     </span>
-                    <span className="mt-px block truncate text-xs text-muted num">
-                      {windowLabel(camp.window, camp.error)}
-                    </span>
+                    {period && (
+                      <span className="mt-px block truncate text-xs text-muted num">
+                        {period}
+                      </span>
+                    )}
                   </span>
                   <Caret open={campOpen} />
                 </button>

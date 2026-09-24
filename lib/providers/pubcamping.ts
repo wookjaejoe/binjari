@@ -72,6 +72,7 @@ function str(value: unknown): string {
 
 export const pubcamping: CampProvider = {
   id: "pubcamping",
+  cheapWindow: true,
 
   async listCamps(portal) {
     return memo(`pubcamping:camps:${portal.host}`, HOUR, async () => {

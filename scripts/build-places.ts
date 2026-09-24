@@ -162,6 +162,7 @@ const GOCAMPING_IDS: Record<string, number> = {
   "gmuc:dodeoksan": 331,
   "maketicket:jangho": 2672,
   "gtdc:yeongok": 2185,
+  "moonhwain:yangsan-hwangsan": 3578,
 };
 
 const OVERPASS = [

@@ -527,6 +527,13 @@
     "sido": "세종",
     "source": "gocamping:7541"
   },
+  "moonhwain:yangsan-hwangsan": {
+    "lat": 35.3017511,
+    "lng": 128.989598,
+    "address": "경상남도 양산시 물금읍 황산공원5길 13",
+    "sido": "경남",
+    "source": "gocamping:3578"
+  },
   "rsvasp:jigyeong": {
     "lat": 37.9225757870964,
     "lng": 128.80102877363,

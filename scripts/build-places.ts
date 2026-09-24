@@ -167,6 +167,7 @@ const GOCAMPING_IDS: Record<string, number> = {
   "rsvasp:sangso": 1570,
   "gmuc:dodeoksan": 331,
   "maketicket:jangho": 2672,
+  "maketicket:gwanggyo": 320,
   "gtdc:yeongok": 2185,
   "moonhwain:yangsan-hwangsan": 3578,
   "suseong:jinbatgol": 7560,

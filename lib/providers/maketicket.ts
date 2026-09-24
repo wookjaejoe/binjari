@@ -24,6 +24,7 @@ const MAX_MONTHS = 3;
 export const MAKETICKET_CAMPS: { slug: string; name: string; gd: string; idkey: string }[] = [
   { slug: "jangho", name: "삼척 장호비치캠핑장", gd: "GD41", idkey: "5M8190" },
   { slug: "yeomjeon", name: "울진 염전해변캠핑장", gd: "GD110", idkey: "5M4360" },
+  { slug: "gwanggyo", name: "수원 광교호수공원 가족캠핑장", gd: "GD129", idkey: "5M4255" },
 ];
 
 const campOf = (camp: CampRef) => {
@@ -112,7 +113,7 @@ export const maketicket: CampProvider = {
         no: code,
         name,
         total: 0,
-        unit: /카라반|캐라반|하우스/.test(name) ? "동" : undefined,
+        unit: /카라반|캐라반|캐러반|하우스/.test(name) ? "동" : undefined,
         size: "",
         maxPeop: 0,
         order,

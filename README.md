@@ -14,7 +14,7 @@
 - 예산 예당 국민여가캠핑장(`camping.yesan.go.kr`)
 - 옛 ASP 예약 화면(`reservation.asp`)을 쓰는 지자체 캠핑장 — 양양 지경 국민여가, 대전 상소오토
 - 광명도시공사 도덕산캠핑장(`www.gmuc.co.kr`)
-- 스마틱스 Forest MakeTicket(`forest.maketicket.co.kr`) — 삼척 장호비치, 울진 염전해변
+- 스마틱스 Forest MakeTicket(`forest.maketicket.co.kr`) — 삼척 장호비치, 울진 염전해변, 수원 광교호수공원
 - 강릉관광개발공사 연곡해변 솔향기캠핑장(`camping.gtdc.or.kr`)
 - 대구 수성구 진밭골야영장(`www.suseong.kr/camping`)
 - 아산시시설관리공단 곡교천야영장(`camping.asanfmc.or.kr`)

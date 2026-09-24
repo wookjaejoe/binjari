@@ -583,6 +583,13 @@
     "sido": "경북",
     "source": "gocamping:100338"
   },
+  "maketicket:gwanggyo": {
+    "lat": 37.2738334,
+    "lng": 127.0648584,
+    "address": "경기도 수원시 영통구 하동 광교호수로 57",
+    "sido": "경기",
+    "source": "gocamping:320"
+  },
   "maketicket:jangho": {
     "lat": 37.2845337,
     "lng": 129.3121934,

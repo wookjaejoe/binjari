@@ -93,9 +93,16 @@ const still = () => window.matchMedia("(prefers-reduced-motion: reduce)").matche
 /** 핀 전체가 들어오게. 핀 하나만 있어도 동네 단위(11)까지만 당긴다. */
 const FIT = { padding: 24, maxZoom: 11 };
 
-function fitPins(map: MapLibre | null, pins: Pin[]) {
+/**
+ * 검색이 옮긴 지도는 목록을 거르지 않는다(검색어가 있으면 목록은 검색 결과다). 그 이동이 도중에
+ * 끊기면 끊긴 자리로 moveend 가 오는데, 그걸 영역으로 받으면 검색을 지운 뒤에도 목록이 잠깐
+ * 옛 검색 자리로 줄었다. 이동에 이유를 달아 검색 이동은 알리지 않는다.
+ */
+type FitReason = "search" | "reset";
+
+function fitPins(map: MapLibre | null, pins: Pin[], reason: FitReason) {
   const target = pinBox(pins);
-  if (target) map?.fitBounds(target, { ...FIT, animate: !still() });
+  if (target) map?.fitBounds(target, { ...FIT, animate: !still() }, { reason });
 }
 
 export default function PlaceMap({
@@ -252,7 +259,9 @@ export default function PlaceMap({
           report();
         });
 
-        map.on("moveend", report);
+        map.on("moveend", (event) => {
+          if ((event as { reason?: FitReason }).reason !== "search") report();
+        });
 
         map.on("click", async (event) => {
           if (!map) return;
@@ -317,7 +326,8 @@ export default function PlaceMap({
   useEffect(() => {
     if (!loaded || lastFit.current === fitKey) return;
     lastFit.current = fitKey;
-    fitPins(mapRef.current, latest.current.pins);
+    // 검색어를 지우면 전국으로 물러난다 — 그건 목록을 되돌리는 이동이라 알린다.
+    fitPins(mapRef.current, latest.current.pins, fitKey ? "search" : "reset");
   }, [loaded, fitKey]);
 
   return (
@@ -326,7 +336,7 @@ export default function PlaceMap({
       {showReset && (
         <button
           type="button"
-          onClick={() => fitPins(mapRef.current, latest.current.pins)}
+          onClick={() => fitPins(mapRef.current, latest.current.pins, "reset")}
           className="absolute top-2 right-2 rounded-full bg-surface px-3 py-1.5 text-xs font-medium elev-2 active:bg-surface-2"
         >
           전국 보기

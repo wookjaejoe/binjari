@@ -184,7 +184,12 @@ export function TargetPicker({ data }: { data: CampData[] }) {
       <div className="flex shrink-0 items-center gap-2 border-b border-line bg-surface px-4 py-2.5">
         <input
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            // 검색을 지우면 지도가 전국으로 물러나는 동안에도 목록은 전부다. 지난 검색의
+            // 영역으로 잠깐 줄어 있지 않게 한다.
+            if (!event.target.value.trim()) setBounds(null);
+          }}
           placeholder="캠핑장 · 지역 · 구역"
           className="min-w-0 flex-1 rounded-md bg-surface-2 px-3 py-2 text-sm outline-none placeholder:text-subtle"
         />

@@ -14,7 +14,7 @@ export type ProviderId =
   | "huyang"
   | "ulju"
   | "dpto"
-  | "daejeo"
+  | "comeall"
   | "changwon"
   | "dssiseol"
   | "yeongdo"

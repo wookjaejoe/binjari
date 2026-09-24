@@ -1,6 +1,6 @@
 import { asanfmc } from "@/lib/providers/asanfmc";
 import { changwon } from "@/lib/providers/changwon";
-import { daejeo } from "@/lib/providers/daejeo";
+import { comeall } from "@/lib/providers/comeall";
 import { dpto } from "@/lib/providers/dpto";
 import { dssiseol } from "@/lib/providers/dssiseol";
 import { ghss } from "@/lib/providers/ghss";
@@ -119,10 +119,11 @@ export const PORTALS: Portal[] = [
     provider: "dpto",
   },
   {
-    id: "daejeo",
-    host: "www.daejeocamping.com",
+    // 캠핑장마다 도메인이 다르다(대저·삼락). 주소는 어댑터의 목록(COMEALL_CAMPS)에 있다.
+    id: "comeall",
+    host: "",
     label: "지자체 캠핑장",
-    provider: "daejeo",
+    provider: "comeall",
   },
   {
     id: "changwon",
@@ -166,7 +167,7 @@ const PROVIDERS: Record<ProviderId, CampProvider> = {
   huyang,
   ulju,
   dpto,
-  daejeo,
+  comeall,
   changwon,
   dssiseol,
   yeongdo,

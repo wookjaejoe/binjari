@@ -13,12 +13,19 @@
     "sido": "경남",
     "source": "gocamping:704"
   },
-  "daejeo:daejeo": {
+  "comeall:daejeo": {
     "lat": 35.215809,
     "lng": 128.9718533,
     "address": "부산광역시 강서구 대저1동 1-5번지",
     "sido": "부산",
     "source": "gocamping:769"
+  },
+  "comeall:samrak": {
+    "lat": 35.1664699070248,
+    "lng": 128.968683286896,
+    "address": "부산광역시 사상구 삼락동 29-59",
+    "sido": "부산",
+    "source": "gocamping:1547"
   },
   "dpto:haeyang": {
     "lat": 36.8953511,

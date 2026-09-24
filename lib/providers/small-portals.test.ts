@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { parseAsan } from "@/lib/providers/asanfmc";
 import { parseChangwonPage } from "@/lib/providers/changwon";
-import { parseDaejeo } from "@/lib/providers/daejeo";
+import { parseComeall, parseLiveStart } from "@/lib/providers/comeall";
 import { parseDptoCalendar, parseDptoMap } from "@/lib/providers/dpto";
 import { parseDssPage } from "@/lib/providers/dssiseol";
 import { parseGhssList, parseGhssPage } from "@/lib/providers/ghss";
@@ -209,7 +209,7 @@ describe("당진도시공사", () => {
   });
 });
 
-describe("parseDaejeo (부산 대저)", () => {
+describe("낙동강 캠핑장 (부산 대저·삼락)", () => {
   const site = (state: string, id: string, zone: string, name: string) =>
     `<a href="" class="cbtn area_${zone.toLowerCase()} cbtn_${name} ${state} tooltip ">${name}
       <input type="hidden" class="siteid" value="${id}"> <input type="hidden" class="sitetype" value="${zone}">
@@ -217,11 +217,16 @@ describe("parseDaejeo (부산 대저)", () => {
 
   it("사이트마다 구역과 상태를 읽고, 예약가능(cbtn_on)만 빈 것으로 본다", () => {
     const html = site("cbtn_on", "212", "A", "01") + site("cbtn_Pcancel", "214", "A", "03") + site("cbtn_Pcomplete", "300", "D", "12");
-    expect(parseDaejeo(html)).toEqual([
+    expect(parseComeall(html)).toEqual([
       { id: "212", zone: "A", name: "A-01", open: true },
       { id: "214", zone: "A", name: "A-03", open: false },
       { id: "300", zone: "D", name: "D-12", open: false },
     ]);
+  });
+
+  it("화면 스크립트에서 예약 시작 시각을 읽는다", () => {
+    const html = `const LIVE_START_DAY = parseInt('5'); // 라이브 시작 일 const LIVE_START_HOUR = parseInt('11');`;
+    expect(parseLiveStart(html)).toEqual({ day: 5, hour: 11 });
   });
 });
 

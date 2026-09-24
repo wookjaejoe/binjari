@@ -176,6 +176,7 @@ const GOCAMPING_IDS: Record<string, number> = {
   "dpto:waemok": 7889,
   "dpto:nanjido": 7507,
   "daejeo:daejeo": 769,
+  "changwon:dalcheon": 704,
 };
 
 const OVERPASS = [

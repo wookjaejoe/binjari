@@ -6,6 +6,13 @@
     "sido": "충남",
     "source": "gocamping:1993"
   },
+  "changwon:dalcheon": {
+    "lat": 35.2831966202334,
+    "lng": 128.598252179456,
+    "address": "경상남도 창원시 의창구 북면 달천길 150",
+    "sido": "경남",
+    "source": "gocamping:704"
+  },
   "daejeo:daejeo": {
     "lat": 35.215809,
     "lng": 128.9718533,

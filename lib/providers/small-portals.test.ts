@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parseAsan } from "@/lib/providers/asanfmc";
+import { parseChangwonPage } from "@/lib/providers/changwon";
 import { parseDaejeo } from "@/lib/providers/daejeo";
 import { parseDptoCalendar, parseDptoMap } from "@/lib/providers/dpto";
 import { parseGmuc } from "@/lib/providers/gmuc";
@@ -218,5 +219,18 @@ describe("parseDaejeo (부산 대저)", () => {
       { id: "214", zone: "A", name: "A-03", open: false },
       { id: "300", zone: "D", name: "D-12", open: false },
     ]);
+  });
+});
+
+describe("parseChangwonPage (창원 달천)", () => {
+  it("구역 정원·찬 날·CSRF 토큰을 읽는다", () => {
+    const html = `<input type="hidden" name="CSRFToken" value="abc-123" />
+      <td><span class="fwb" id="siteCount"></span> /26</td> <td><span class="fwb" id="caravanCount"></span> /4</td>
+      <td><span class="fwb" id="bgCount"></span> /4</td>
+      <script> fn_finishday_push("2026-10-03"); fn_finishday_push("2026-10-04"); </script>`;
+    const page = parseChangwonPage(html);
+    expect(page.csrf).toBe("abc-123");
+    expect(page.totals).toEqual({ siteCount: 26, caravanCount: 4, bgCount: 4 });
+    expect([...page.finished]).toEqual(["2026-10-03", "2026-10-04"]);
   });
 });

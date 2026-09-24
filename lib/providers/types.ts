@@ -1,4 +1,10 @@
-export type ProviderId = "pubcamping" | "knps" | "knpsShelter" | "xticket";
+export type ProviderId =
+  | "pubcamping"
+  | "knps"
+  | "knpsShelter"
+  | "xticket"
+  | "moonhwain"
+  | "yesan";
 
 export type Portal = {
   id: string;
@@ -45,6 +51,11 @@ export type ZoneDay = {
   zones: Zone[];
   counts: Record<string, number>;
   amounts: Record<string, number | null>;
+  /**
+   * 구역은 알지만 이 일정은 포털에 물을 길이 없다(예: 1박 달력만 공개된 곳의 2박).
+   * 그 날짜는 없음이 아니라 모름이다. 구역 목록은 그대로 써서 행은 남긴다.
+   */
+  unanswered?: boolean;
 };
 
 export type Room = {

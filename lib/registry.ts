@@ -1,7 +1,9 @@
 import { knps } from "@/lib/providers/knps";
 import { knpsShelter } from "@/lib/providers/knps-shelter";
+import { moonhwain } from "@/lib/providers/moonhwain";
 import { pubcamping } from "@/lib/providers/pubcamping";
 import { xticket } from "@/lib/providers/xticket";
+import { yesan } from "@/lib/providers/yesan";
 import type { CampProvider, CampRef, Portal, ProviderId } from "@/lib/providers/types";
 
 /**
@@ -33,6 +35,18 @@ export const PORTALS: Portal[] = [
     label: "지자체 캠핑장",
     provider: "xticket",
   },
+  {
+    id: "moonhwain",
+    host: "moonhwain.net",
+    label: "지자체 캠핑장",
+    provider: "moonhwain",
+  },
+  {
+    id: "yesan",
+    host: "camping.yesan.go.kr",
+    label: "지자체 캠핑장",
+    provider: "yesan",
+  },
 ];
 
 const PROVIDERS: Record<ProviderId, CampProvider> = {
@@ -40,6 +54,8 @@ const PROVIDERS: Record<ProviderId, CampProvider> = {
   knps,
   knpsShelter,
   xticket,
+  moonhwain,
+  yesan,
 };
 
 /** 자동 발견 목록에서 뺄 캠핑장, 또는 표시 이름을 다듬을 곳. */

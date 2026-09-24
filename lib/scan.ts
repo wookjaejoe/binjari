@@ -66,6 +66,10 @@ export function scanZones(campId: string, nights: number): Promise<ZoneScan> {
       for (const zone of day.zones) {
         if (!zones.has(zone.no)) zones.set(zone.no, zone);
       }
+      if (day.unanswered) {
+        failedDates.push(date);
+        continue;
+      }
       counts[date] = day.counts;
       amounts[date] = day.amounts;
     }

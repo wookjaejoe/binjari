@@ -303,7 +303,7 @@ export default function Page() {
           <div className="mx-auto max-w-3xl px-5 pt-4 pb-14">
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold">빈자리</h1>
-              <span className="text-xs text-on-ink/55">공공캠핑장 · 국립공원 야영장</span>
+              <span className="text-xs text-on-ink/55">공공 캠핑장 · 대피소</span>
               <div className="ml-auto flex items-center gap-1 text-xs text-on-ink/55">
                 {scanning ? (
                   <Spinner onInk />

@@ -1,4 +1,4 @@
-export type ProviderId = "pubcamping" | "knps";
+export type ProviderId = "pubcamping" | "knps" | "knpsShelter";
 
 export type Portal = {
   id: string;
@@ -30,6 +30,8 @@ export type Zone = {
   no: string;
   name: string;
   total: number;
+  /** total·잔여를 세는 단위. 없으면 "면"(영지·사이트). 대피소는 "자리"다. */
+  unit?: string;
   size: string;
   maxPeop: number;
   order: number;

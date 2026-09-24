@@ -115,7 +115,7 @@ export function DayDetail({
       }
     >
       <div className="divide-y divide-line">
-        {camps.map(({ camp, roomScan }) => {
+        {camps.map(({ camp, zoneScan, roomScan }) => {
           const campRows = zoneRows.filter((row) => row.campId === camp.id);
           return (
             <section key={camp.id} className="px-4 py-3">
@@ -126,6 +126,8 @@ export function DayDetail({
               <ul className="space-y-2.5">
                 {campRows.map((row) => {
                   const cell = evaluate(row, date, data, selection);
+                  const unit =
+                    zoneScan?.zones.find((zone) => zone.no === row.zoneNo)?.unit ?? "면";
                   const pick = selection[camp.id]?.[row.zoneNo];
                   const catalog = (roomScan?.rooms ?? []).filter(
                     (room) => room.zoneNo === row.zoneNo,
@@ -158,7 +160,7 @@ export function DayDetail({
                           )}
                         >
                           {cell.state === "open"
-                            ? `${cell.count}면`
+                            ? `${cell.count}${unit}`
                             : cell.state === "none"
                               ? "없음"
                               : cell.state === "loading"

@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     // 브라우저가 포털을 직접 때리지 않고, 최적화본이 우리 쪽에 캐시되게 한다.
     remotePatterns: [
       { protocol: "https", hostname: "gwgs.pubcamping.kr", pathname: "/upload/**" },
-      { protocol: "https", hostname: "reservation.knps.or.kr", pathname: "/cntnts/camp/**" },
+      { protocol: "https", hostname: "reservation.knps.or.kr", pathname: "/cntnts/**" },
     ],
   },
   // localhost 외의 호스트명으로 dev 서버에 붙으면 Next 가 _next/hmr 을 막는다.

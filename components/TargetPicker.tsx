@@ -190,9 +190,14 @@ export function TargetPicker({ data }: { data: CampData[] }) {
                                 {zone.name}
                               </span>
                               <span className="mt-px block truncate text-xs text-muted num">
-                                {zone.total}면
-                                {pick?.mode === "some" && ` · ${pick.rooms.length}개 선택`}
-                                {zone.maxPeop > 0 && ` · ${zone.maxPeop}인`}
+                                {/* 정원을 모르면(대피소가 기간 내내 예약만료) 0 으로 적지 않고 뺀다. */}
+                                {[
+                                  zone.total > 0 && `${zone.total}${zone.unit ?? "면"}`,
+                                  pick?.mode === "some" && `${pick.rooms.length}개 선택`,
+                                  zone.maxPeop > 0 && `${zone.maxPeop}인`,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
                               </span>
                             </span>
                             <Caret open={zoneOpen} />

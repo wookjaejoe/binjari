@@ -22,7 +22,7 @@ import type {
  * 표에는 사진이 없다. 구역 사진은 이용안내 페이지의 사진첩에서 따로 받는다.
  */
 
-const ORIGIN = "https://reservation.knps.or.kr";
+export const ORIGIN = "https://reservation.knps.or.kr";
 const BOOKING_PAGE = `${ORIGIN}/reservation/searchSimpleCampReservation.do`;
 
 const UA =
@@ -45,7 +45,7 @@ type Site = { no: string; name: string; zone: string; nights: Record<string, Nig
 
 export type Grid = { dates: string[]; zones: string[]; sites: Site[] };
 
-async function fetchText(url: string, body?: Record<string, string>) {
+export async function fetchText(url: string, body?: Record<string, string>) {
   const res = await fetch(url, {
     method: body ? "POST" : "GET",
     headers: {
@@ -59,14 +59,14 @@ async function fetchText(url: string, body?: Record<string, string>) {
   return res.text();
 }
 
-const between = (html: string, start: string, end?: string) => {
+export const between = (html: string, start: string, end?: string) => {
   const from = html.indexOf(start);
   if (from < 0) return null;
   const to = end ? html.indexOf(end, from) : -1;
   return html.slice(from, to < 0 ? undefined : to);
 };
 
-const rowsOf = (table: string) => [...table.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((m) => m[1]);
+export const rowsOf = (table: string) => [...table.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((m) => m[1]);
 
 /** `<span class="title"> B01 </span>`, 툴팁이 붙으면 `<span class="title tooltip"> 하우스-9 <span …>`. */
 const titleOf = (cell: string) => cell.match(/<span class="title[^"]*">([^<]*)/)?.[1].trim() ?? "";

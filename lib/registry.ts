@@ -1,4 +1,5 @@
 import { knps } from "@/lib/providers/knps";
+import { knpsShelter } from "@/lib/providers/knps-shelter";
 import { pubcamping } from "@/lib/providers/pubcamping";
 import type { CampProvider, CampRef, Portal, ProviderId } from "@/lib/providers/types";
 
@@ -16,14 +17,21 @@ export const PORTALS: Portal[] = [
   {
     id: "knps",
     host: "reservation.knps.or.kr",
-    label: "국립공원",
+    label: "국립공원 야영장",
     provider: "knps",
+  },
+  {
+    id: "knps-shelter",
+    host: "reservation.knps.or.kr",
+    label: "국립공원 대피소",
+    provider: "knpsShelter",
   },
 ];
 
 const PROVIDERS: Record<ProviderId, CampProvider> = {
   pubcamping,
   knps,
+  knpsShelter,
 };
 
 /** 자동 발견 목록에서 뺄 캠핑장, 또는 표시 이름을 다듬을 곳. */

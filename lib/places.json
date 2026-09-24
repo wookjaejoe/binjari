@@ -69,6 +69,20 @@
     "sido": "강원",
     "source": "gocamping:1802"
   },
+  "huyang:donggang": {
+    "lat": 37.2595994,
+    "lng": 128.6079023,
+    "address": "강원특별자치도 정선군 신동읍 동강로 916-212",
+    "sido": "강원",
+    "source": "gocamping:6975"
+  },
+  "huyang:hwaam": {
+    "lat": 37.3292434027344,
+    "lng": 128.785826853276,
+    "address": "강원특별자치도 정선군 화암면 약수길 1330",
+    "sido": "강원",
+    "source": "gocamping:3551"
+  },
   "knps-shelter:B01": {
     "lat": 35.32097821428572,
     "lng": 127.67072394285712,

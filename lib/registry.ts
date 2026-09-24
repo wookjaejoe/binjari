@@ -1,6 +1,7 @@
 import { asanfmc } from "@/lib/providers/asanfmc";
 import { gmuc } from "@/lib/providers/gmuc";
 import { gtdc } from "@/lib/providers/gtdc";
+import { huyang } from "@/lib/providers/huyang";
 import { knps } from "@/lib/providers/knps";
 import { knpsShelter } from "@/lib/providers/knps-shelter";
 import { maketicket } from "@/lib/providers/maketicket";
@@ -91,6 +92,13 @@ export const PORTALS: Portal[] = [
     label: "지자체 캠핑장",
     provider: "asanfmc",
   },
+  {
+    // 캠핑장마다 서브도메인이 다르다. 주소는 어댑터의 목록(HUYANG_CAMPS)에 있다.
+    id: "huyang",
+    host: "",
+    label: "지자체 캠핑장",
+    provider: "huyang",
+  },
 ];
 
 const PROVIDERS: Record<ProviderId, CampProvider> = {
@@ -106,6 +114,7 @@ const PROVIDERS: Record<ProviderId, CampProvider> = {
   gtdc,
   suseong,
   asanfmc,
+  huyang,
 };
 
 /** 자동 발견 목록에서 뺄 캠핑장, 또는 표시 이름을 다듬을 곳. */

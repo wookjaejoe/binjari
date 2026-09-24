@@ -10,7 +10,8 @@ export type ProviderId =
   | "maketicket"
   | "gtdc"
   | "suseong"
-  | "asanfmc";
+  | "asanfmc"
+  | "huyang";
 
 export type Portal = {
   id: string;

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { parseAsan } from "@/lib/providers/asanfmc";
 import { parseGmuc } from "@/lib/providers/gmuc";
+import { parseHuyangCalendar, parseHuyangDay } from "@/lib/providers/huyang";
 import { remaining } from "@/lib/providers/gtdc";
 import { parseMakeTicket } from "@/lib/providers/maketicket";
 import { parseActDate } from "@/lib/providers/moonhwain";
@@ -134,5 +135,28 @@ describe("parseAsan (아산 곡교천)", () => {
         "2026-10-06": { "A1(퍼컬러사이트)": false, B1: true },
       },
     });
+  });
+});
+
+describe("huyang (정선 동강전망·화암약수)", () => {
+  it("달력에서 예약을 받는 날(open)만 읽는다", () => {
+    const html = `<li class="month">2026년 9월</li>
+      <td class="close"><span class="day day_none">25</span></td>
+      <td class="open"><span class="day day_none">26</span><form action="reservation.asp?location=002_01"></form></td>
+      <form method="post" action="/reservation.asp?location=002" name="form_next"></form>`;
+    expect(parseHuyangCalendar(html)).toEqual({ open: ["2026-09-26"], hasNext: true });
+  });
+
+  it("날짜 목록에서 이름 칸만 읽고 요금 칸은 세지 않는다", () => {
+    const html = `<table class="res_facility_list_t"><tr><th>시설명</th></tr>
+      <tr> <td>데크44</td> <td>30,000원</td> <td>40,000원</td> <td>40,000원</td> <td><form action="/reservation.asp?location=002_02"></form></td> </tr>
+      <td>데크45</td> <td>30,000원</td> <td>40,000원</td> <td>40,000원</td> <td><form action="/reservation.asp?location=002_02"></form></td> </tr>
+      </table>`;
+    expect(parseHuyangDay(html)).toEqual(["데크44", "데크45"]);
+  });
+
+  it("빈 사이트가 없다는 경고는 없음이고, 목록도 경고도 없으면 실패다", () => {
+    expect(parseHuyangDay(`<script>alert("예약 가능한 시설이 없습니다.")</script>`)).toEqual([]);
+    expect(() => parseHuyangDay("<html></html>")).toThrow();
   });
 });

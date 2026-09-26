@@ -178,3 +178,17 @@ export function dropScanCache(campId?: string) {
   invalidate(campId ? `portal:${campId}` : "portal:");
   if (campId) invalidate(`scan:rooms:${campId}`);
 }
+
+/**
+ * 새로고침이 캐시를 지울 수 있는 최소 간격. 여럿이 같은 캠핑장을 새로고침하거나, 새로고침 뒤의
+ * 자동 갱신(요청에 fresh 가 계속 붙는다)이 겹쳐도 포털에는 캠핑장마다 이 간격으로만 간다.
+ */
+const REFRESH_FLOOR = MINUTE;
+const refreshedAt = new Map<string, number>();
+
+export function refreshScan(campId: string) {
+  const last = refreshedAt.get(campId);
+  if (last !== undefined && Date.now() - last < REFRESH_FLOOR) return;
+  refreshedAt.set(campId, Date.now());
+  dropScanCache(campId);
+}

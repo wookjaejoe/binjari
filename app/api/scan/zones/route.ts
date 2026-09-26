@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { dropScanCache, scanZones } from "@/lib/scan";
+import { refreshScan, scanZones } from "@/lib/scan";
 
 export const dynamic = "force-dynamic";
 // 스캔은 날짜 수만큼 포털을 부른다. 서버리스 기본 한도(10초)로는 콜드 스타트 때 모자란다.
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const nights = Math.max(1, Math.min(14, Number(params.get("nights") ?? 1) || 1));
 
   try {
-    if (params.get("fresh")) dropScanCache(campId);
+    if (params.get("fresh")) refreshScan(campId);
     return NextResponse.json(await scanZones(campId, nights));
   } catch (error) {
     return NextResponse.json(

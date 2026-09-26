@@ -1,0 +1,49 @@
+name: 포털 점검
+
+# 매일 아침 운영 주소의 /api/health 를 캠핑장마다 부른다(scripts/check-portals.ts).
+# 포털 요청은 앱 서버(Vercel 서울 리전)에서 나가므로, 이 러너가 어디서 돌든 실제 배포 환경을 본다.
+# 실패가 있으면 portal-health 이슈를 연다. 이미 열려 있으면 실패 목록이 바뀐 때만 댓글을 달고,
+# 다시 통과하면 닫는다. 경고는 실패가 있을 때 같은 글에 같이 적힌다.
+on:
+  schedule:
+    - cron: "0 21 * * *" # 06:00 KST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 점검
+        id: check
+        continue-on-error: true
+        env:
+          APP: https://binjari-xi.vercel.app
+        run: node scripts/check-portals.ts --md report.md
+      - name: 이슈로 알린다
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OUTCOME: ${{ steps.check.outcome }}
+        run: |
+          open=$(gh issue list --label portal-health --state open --json number --jq '.[0].number // empty')
+          if [ "$OUTCOME" = "failure" ]; then
+            [ -f report.md ] || echo "점검 스크립트가 끝나지 못했어요. Actions 기록을 보세요. <!-- fails: script -->" > report.md
+            now=$(grep -o '<!-- fails: [^>]* -->' report.md || true)
+            if [ -z "$open" ]; then
+              gh label create portal-health --color B60205 --description "포털 점검 실패" --force
+              gh issue create --title "포털 점검 실패" --label portal-health --body-file report.md
+            else
+              last=$(gh issue view "$open" --json body,comments --jq '([.body] + [.comments[].body]) | last' | grep -o '<!-- fails: [^>]* -->' || true)
+              [ "$now" = "$last" ] || gh issue comment "$open" --body-file report.md
+            fi
+          elif [ -n "$open" ]; then
+            gh issue close "$open" --comment "다시 통과했어요."
+          fi

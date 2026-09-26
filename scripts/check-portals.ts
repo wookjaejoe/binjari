@@ -6,6 +6,9 @@
  *   node scripts/check-portals.ts                        # http://localhost:3000
  *   APP=https://binjari-xi.vercel.app node scripts/check-portals.ts --md report.md
  *
+ * 미리보기 배포는 Vercel 로그인 보호가 걸려 있다. 프로젝트 설정의 Protection Bypass for
+ * Automation 값을 VERCEL_BYPASS 로 주면 그 헤더를 붙여 부른다.
+ *
  * 실패(fail)가 하나라도 있거나 포털이 목록을 못 주면 종료 코드 1. 경고(warn)는 적기만 한다.
  * GitHub Actions(.github/workflows/portal-health.yml)가 매일 운영 주소로 돌리고 이슈로 알린다.
  *
@@ -32,8 +35,13 @@ const MD = mdAt > 0 ? process.argv[mdAt + 1] : null;
 const ROTATE: Record<string, number> = { knps: 3, "knps-shelter": 2 };
 const PARALLEL_PORTALS = 4;
 
+const BYPASS = process.env.VERCEL_BYPASS;
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${APP}${path}`, { signal: AbortSignal.timeout(90_000) });
+  const res = await fetch(`${APP}${path}`, {
+    headers: BYPASS ? { "x-vercel-protection-bypass": BYPASS } : {},
+    signal: AbortSignal.timeout(90_000),
+  });
   const body = await res.text();
   if (!res.ok) throw new Error(`${path} → HTTP ${res.status} ${body.slice(0, 120)}`);
   return JSON.parse(body) as T;

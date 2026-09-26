@@ -88,13 +88,14 @@ export function parseHuyangCalendar(html: string): { open: string[]; hasNext: bo
 
 /**
  * 날짜 목록 → 예약할 수 있는 사이트 이름. 줄마다 이름 칸 뒤에 요금 칸 몇 개와 예약 폼이 온다.
- * 하나도 없으면 목록 대신 "예약 가능한 시설이 없습니다" 경고만 온다 — 없음이다.
+ * 하나도 없으면 목록 대신 "예약 가능한 시설이 없습니다" 경고만 온다 — 없음이다. 일정이 예약을
+ * 받는 날을 넘기면 "모든 시설예약이 종료되었습니다"가 온다(하기숲 9/28 2박) — 이것도 없음이다.
  */
 export function parseHuyangDay(html: string): string[] {
   const page = squash(html);
   const table = page.match(/class="res_facility_list_t"(.*?)<\/table>/)?.[1];
   if (table == null) {
-    if (page.includes("예약 가능한 시설이 없습니다")) return [];
+    if (/예약 가능한 시설이 없습니다|시설예약이 종료되었습니다/.test(page)) return [];
     throw new Error("예약 가능 시설 목록을 찾지 못했습니다");
   }
   return [...table.matchAll(/<td>([^<]+)<\/td>(?:\s*<td>[\d,]+원<\/td>)+\s*<td><form/g)].map(([, name]) =>

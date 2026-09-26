@@ -48,6 +48,42 @@ async function getText(url: string) {
   return res.text();
 }
 
+/**
+ * 일정 검색(`productSearchJson.do`) 응답 → 구역별 남은 수.
+ *
+ * `RESULT_CODE` 가 FAIL 이어도 구역 목록은 온다(대진 9/27·9/29·10/6, 남은 수 0). 포털 화면은
+ * FAIL 이면 목록을 그리지 않고 "선택한 일자에 예약가능한 사이트가 없습니다"를 띄운다 — 없음이다.
+ * 구역 목록까지 없으면 무엇이 없는지 모르니 모름(null)이다. 매진인 날은 SUCCESS 에 0 이 온다.
+ */
+export function parseProductSearch(res: Json, host: string): ZoneDay | null {
+  const closed = res.RESULT_CODE !== "SUCCESS";
+  if (closed && !Array.isArray(res.RESULT_DATA)) return null;
+
+  const zones: Zone[] = [];
+  const counts: Record<string, number> = {};
+  const amounts: Record<string, number | null> = {};
+
+  for (const raw of (res.RESULT_DATA ?? []) as Json[]) {
+    const no = str(raw.ROOM_AREA_NO);
+    // MASTER_IMAGE 는 "/2024/0404/….jpg" 꼴의 경로다. upload/cont 가 본문용 크기이고,
+    // 더 작은 썸네일이 필요하면 next/image 가 이걸 줄인다.
+    const image = str(raw.MASTER_IMAGE);
+    zones.push({
+      no,
+      name: str(raw.ROOM_AREA_NAME),
+      total: num(raw.TOT_ROOM_CNT),
+      size: str(raw.SIZES),
+      maxPeop: num(raw.MAX_PEOP_CNT),
+      order: num(raw.ORDER_LEVEL),
+      photo: image ? `https://${host}/upload/cont${image}` : null,
+      ground: str(raw.GROUNDS),
+    });
+    counts[no] = closed ? 0 : num(raw.ROOM_CNT);
+    amounts[no] = raw.MIN_USE_AMT == null ? null : num(raw.MIN_USE_AMT);
+  }
+  return { zones, counts, amounts };
+}
+
 /** 예약 API가 요구하는 내부 캠핑장 번호. 캠핑장 첫 페이지에만 노출된다. */
 function campNo(portal: Portal, camp: CampRef): Promise<string> {
   return memo(
@@ -125,31 +161,7 @@ export const pubcamping: CampProvider = {
         camp_no: await campNo(portal, camp),
       },
     );
-    if (res.RESULT_CODE !== "SUCCESS") return null;
-
-    const zones: Zone[] = [];
-    const counts: Record<string, number> = {};
-    const amounts: Record<string, number | null> = {};
-
-    for (const raw of (res.RESULT_DATA ?? []) as Json[]) {
-      const no = str(raw.ROOM_AREA_NO);
-      // MASTER_IMAGE 는 "/2024/0404/….jpg" 꼴의 경로다. upload/cont 가 본문용 크기이고,
-      // 더 작은 썸네일이 필요하면 next/image 가 이걸 줄인다.
-      const image = str(raw.MASTER_IMAGE);
-      zones.push({
-        no,
-        name: str(raw.ROOM_AREA_NAME),
-        total: num(raw.TOT_ROOM_CNT),
-        size: str(raw.SIZES),
-        maxPeop: num(raw.MAX_PEOP_CNT),
-        order: num(raw.ORDER_LEVEL),
-        photo: image ? `https://${portal.host}/upload/cont${image}` : null,
-        ground: str(raw.GROUNDS),
-      });
-      counts[no] = num(raw.ROOM_CNT);
-      amounts[no] = raw.MIN_USE_AMT == null ? null : num(raw.MIN_USE_AMT);
-    }
-    return { zones, counts, amounts } satisfies ZoneDay;
+    return parseProductSearch(res, portal.host);
   },
 
   async roomDay(portal, camp, zoneNo, date, nights) {

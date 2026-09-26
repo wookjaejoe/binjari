@@ -10,6 +10,7 @@ import { parseGmuc } from "@/lib/providers/gmuc";
 import { parseHuyangCalendar, parseHuyangDay } from "@/lib/providers/huyang";
 import { remaining } from "@/lib/providers/gtdc";
 import { parseMakeTicket } from "@/lib/providers/maketicket";
+import { parseProductSearch } from "@/lib/providers/pubcamping";
 import { parseActDate } from "@/lib/providers/moonhwain";
 import { parseSuseong } from "@/lib/providers/suseong";
 import { parseUljuDay } from "@/lib/providers/ulju";
@@ -167,6 +168,7 @@ describe("huyang (정선 동강전망·화암약수)", () => {
 
   it("빈 사이트가 없다는 경고는 없음이고, 목록도 경고도 없으면 실패다", () => {
     expect(parseHuyangDay(`<script>alert("예약 가능한 시설이 없습니다.")</script>`)).toEqual([]);
+    expect(parseHuyangDay(`<script>alert("모든 시설예약이 종료되었습니다."); history.back();</script>`)).toEqual([]);
     expect(() => parseHuyangDay("<html></html>")).toThrow();
   });
 });
@@ -292,5 +294,24 @@ describe("강화 함허동천", () => {
   it("쪽마다 결제금액과 전체 쪽 수를 읽는다", () => {
     const html = `<dd>결제금액 : 33,000원</dd> <dd>결제금액 : 35,000원</dd> <script> totalPageCount = 6; </script>`;
     expect(parseGhssList(html)).toEqual({ amounts: [33000, 35000], pages: 6 });
+  });
+});
+
+describe("parseProductSearch (고성)", () => {
+  const zone = { ROOM_AREA_NO: 29, ROOM_AREA_NAME: "오토캠핑", TOT_ROOM_CNT: 8, ORDER_LEVEL: 1, MIN_USE_AMT: 40000 };
+
+  it("SUCCESS 는 구역마다 남은 수를 그대로 읽는다", () => {
+    const day = parseProductSearch({ RESULT_CODE: "SUCCESS", RESULT_DATA: [{ ...zone, ROOM_CNT: 3 }] }, "gwgs.pubcamping.kr");
+    expect(day?.counts).toEqual({ "29": 3 });
+    expect(day?.zones[0]).toMatchObject({ no: "29", name: "오토캠핑", total: 8 });
+  });
+
+  it("FAIL 이어도 구역 목록이 오면 없음이다 — 포털 화면이 예약가능한 사이트가 없다고 한다", () => {
+    const day = parseProductSearch({ RESULT_CODE: "FAIL", RESULT_DATA: [{ ...zone, ROOM_CNT: 2 }] }, "gwgs.pubcamping.kr");
+    expect(day?.counts).toEqual({ "29": 0 });
+  });
+
+  it("FAIL 에 구역 목록도 없으면 모름이다", () => {
+    expect(parseProductSearch({ RESULT_CODE: "FAIL" }, "gwgs.pubcamping.kr")).toBeNull();
   });
 });

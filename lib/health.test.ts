@@ -46,14 +46,19 @@ describe("shapeProblems", () => {
 });
 
 describe("sampleDates", () => {
-  it("첫 날과, 일주일 뒤부터 처음 오는 화–목", () => {
-    // 2026-09-26 은 토요일. 10-03 토 이후 첫 화요일은 10-06.
-    const dates = Array.from({ length: 20 }, (_, i) => `2026-${i < 5 ? "09" : "10"}-${String(i < 5 ? 26 + i : i - 4).padStart(2, "0")}`);
-    expect(sampleDates(dates)).toEqual(["2026-09-26", "2026-10-06"]);
+  // 2026-09-26(토)부터 30일
+  const dates = Array.from({ length: 30 }, (_, i) =>
+    new Date(Date.UTC(2026, 8, 26 + i)).toISOString().slice(0, 10),
+  );
+
+  it("첫 날과, 일주일·이주일 뒤 첫 수요일", () => {
+    // 10-03 이후 첫 수요일은 10-07, 10-10 이후는 10-14
+    expect(sampleDates(dates)).toEqual(["2026-09-26", "2026-10-07", "2026-10-14"]);
   });
 
-  it("기간이 짧으면 첫 날만", () => {
-    expect(sampleDates(["2026-09-26", "2026-09-27"])).toEqual(["2026-09-26"]);
+  it("기간이 짧으면 있는 만큼만", () => {
+    expect(sampleDates(dates.slice(0, 12))).toEqual(["2026-09-26", "2026-10-07"]);
+    expect(sampleDates(dates.slice(0, 2))).toEqual(["2026-09-26"]);
     expect(sampleDates([])).toEqual([]);
   });
 });

@@ -5,7 +5,7 @@ import { PORTALS, getProvider, resolveCamp } from "@/lib/registry";
 import { checkInDates } from "@/lib/scan";
 
 /**
- * 포털 점검. 캠핑장 하나에 예약 기간·구역 조회(1박 두 날짜, 2박 한 날짜)·객실 조회를 한 번씩
+ * 포털 점검. 캠핑장 하나에 예약 기간·구역 조회(1박 세 날짜, 2박 한 날짜)·객실 조회를 한 번씩
  * 불러, 화면이 믿고 쓰는 모양이 맞는지 본다. 포털이 화면을 바꿔 파서가 어긋나면 대개 여기서 걸린다.
  *
  * - fail: 던졌거나 모양이 틀렸다 — 구역 없음, 남은 수가 음수이거나 전체보다 많음, 1박인데
@@ -74,18 +74,17 @@ export function shapeProblems(day: ZoneDay | null, label: string, nights: number
 }
 
 /**
- * 표본 날짜. 첫 체크인 날과, 일주일 뒤부터 처음 오는 화–목. 빈자리가 가장 있을 법한 날을
- * 하나 넣어야 "전부 0" 이 매진인지 못 읽은 것인지 가를 여지가 생긴다. 월요일은 쉬는 지자체
- * 캠핑장이 많고 대체공휴일도 잘 걸려서 뺀다(2026-10-05 에 다섯 곳이 전부 0 이었다).
+ * 표본 날짜. 첫 체크인 날과, 일주일·이주일 뒤 첫 수요일. 빈자리가 있을 법한 날을 넣어야
+ * "전부 0" 이 매진인지 못 읽은 것인지 가를 여지가 생긴다. 수요일인 까닭 — 월요일은 쉬는 지자체
+ * 캠핑장이 많고, 월요일이 공휴일이면 휴관이 화요일로 밀린다(2026-10-05 대체공휴일에 다섯 곳,
+ * 이튿날 10-06 에 여섯 곳이 전부 0 이었다. 둘 다 다음 수요일엔 비어 있었다).
  */
 export function sampleDates(dates: string[]): string[] {
   if (!dates.length) return [];
-  const later = dates.find((date) => {
-    if (date < shiftISO(dates[0], 7)) return false;
-    const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
-    return weekday >= 2 && weekday <= 4;
-  });
-  return later ? [dates[0], later] : [dates[0]];
+  const wednesday = (from: string) =>
+    dates.find((date) => date >= from && new Date(`${date}T00:00:00Z`).getUTCDay() === 3);
+  const later = [wednesday(shiftISO(dates[0], 7)), wednesday(shiftISO(dates[0], 14))];
+  return [dates[0], ...later.filter((date): date is string => Boolean(date))];
 }
 
 export function checkCamp(campId: string): Promise<Health> {

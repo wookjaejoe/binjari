@@ -53,7 +53,9 @@ async function getText(url: string) {
  *
  * `RESULT_CODE` 가 FAIL 이어도 구역 목록은 온다(대진 9/27·9/29·10/6, 남은 수 0). 포털 화면은
  * FAIL 이면 목록을 그리지 않고 "선택한 일자에 예약가능한 사이트가 없습니다"를 띄운다 — 없음이다.
- * 구역 목록까지 없으면 무엇이 없는지 모르니 모름(null)이다. 매진인 날은 SUCCESS 에 0 이 온다.
+ * 그 날 객실 조회도 FAIL 에 객실마다 대기신청 가능(`WAIT_STATE: "Y"`)을 준다. 다 찬 날이다.
+ * 구역 목록까지 없으면 무엇이 없는지 모르니 모름(null)이다. SUCCESS 에 전부 0 이 오는 날도
+ * 있다(봉수대 10/3) — FAIL 과 무엇이 다른지는 모른다. 둘 다 없음이다.
  */
 export function parseProductSearch(res: Json, host: string): ZoneDay | null {
   const closed = res.RESULT_CODE !== "SUCCESS";
@@ -174,7 +176,9 @@ export const pubcamping: CampProvider = {
         room_area_no: zoneNo,
       },
     );
-    if (res.RESULT_CODE !== "SUCCESS") return null;
+    // FAIL 이면 객실마다 STAY_CNT 0, WAIT_STATE "Y"(대기신청)가 온다 — 다 찼다. 목록은 쓴다.
+    const closed = res.RESULT_CODE !== "SUCCESS";
+    if (closed && !Array.isArray(res.RESULT_DATA)) return null;
 
     const rooms: Room[] = [];
     const available: string[] = [];
@@ -187,7 +191,7 @@ export const pubcamping: CampProvider = {
         amount: num(raw.AMOUNT),
         size: str(raw.ROOM_SIZE),
       });
-      if (num(raw.STAY_CNT) >= nights) available.push(no);
+      if (!closed && num(raw.STAY_CNT) >= nights) available.push(no);
     }
     return { rooms, available } satisfies RoomDay;
   },

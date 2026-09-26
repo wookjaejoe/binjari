@@ -51,14 +51,16 @@ describe("sampleDates", () => {
     new Date(Date.UTC(2026, 8, 26 + i)).toISOString().slice(0, 10),
   );
 
-  it("첫 날과, 일주일·이주일 뒤 첫 수요일", () => {
-    // 10-03 이후 첫 수요일은 10-07, 10-10 이후는 10-14
-    expect(sampleDates(dates)).toEqual(["2026-09-26", "2026-10-07", "2026-10-14"]);
+  it("첫 날과, 일주일 뒤부터 이레", () => {
+    expect(sampleDates(dates)).toEqual({
+      first: "2026-09-26",
+      week: ["2026-10-03", "2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09"],
+    });
   });
 
   it("기간이 짧으면 있는 만큼만", () => {
-    expect(sampleDates(dates.slice(0, 12))).toEqual(["2026-09-26", "2026-10-07"]);
-    expect(sampleDates(dates.slice(0, 2))).toEqual(["2026-09-26"]);
-    expect(sampleDates([])).toEqual([]);
+    expect(sampleDates(dates.slice(0, 9))).toEqual({ first: "2026-09-26", week: ["2026-10-03", "2026-10-04"] });
+    expect(sampleDates(dates.slice(0, 2))).toEqual({ first: "2026-09-26", week: [] });
+    expect(sampleDates([])).toBeNull();
   });
 });

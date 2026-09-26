@@ -5,12 +5,12 @@ import { PORTALS, getProvider, resolveCamp } from "@/lib/registry";
 import { checkInDates } from "@/lib/scan";
 
 /**
- * 포털 점검. 캠핑장 하나에 예약 기간·구역 조회(1박 세 날짜, 2박 한 날짜)·객실 조회를 한 번씩
+ * 포털 점검. 캠핑장 하나에 예약 기간·구역 조회(1박 몇 날짜, 2박 한 날짜)·객실 조회를 한 번씩
  * 불러, 화면이 믿고 쓰는 모양이 맞는지 본다. 포털이 화면을 바꿔 파서가 어긋나면 대개 여기서 걸린다.
  *
  * - fail: 던졌거나 모양이 틀렸다 — 구역 없음, 남은 수가 음수이거나 전체보다 많음, 1박인데
  *   "물을 길 없음", 응답 없음(null).
- * - warn: 틀렸다고 단정할 수 없지만 사람이 볼 것 — 예약 기간 없음, 표본 날짜가 전부 0.
+ * - warn: 틀렸다고 단정할 수 없지만 사람이 볼 것 — 예약 기간 없음, 물어본 날이 전부 0.
  *   전부 0 은 매진일 수도 있지만, 빈 사이트 표시가 바뀌어 못 읽을 때도 똑같이 0 으로 보인다.
  *
  * 화면에는 쓰지 않는다. scripts/check-portals.ts 가 캠핑장마다 부른다.
@@ -22,7 +22,7 @@ export type Health = {
   portalId: string;
   status: "ok" | "warn" | "fail";
   problems: string[];
-  /** 표본 날짜 → 1박 남은 수의 합. 매일 돌린 기록을 비교할 때 쓴다. */
+  /** 물어본 날짜 → 1박 남은 수의 합 */
   sample: Record<string, number>;
   zones: string[];
   ms: number;
@@ -74,17 +74,16 @@ export function shapeProblems(day: ZoneDay | null, label: string, nights: number
 }
 
 /**
- * 표본 날짜. 첫 체크인 날과, 일주일·이주일 뒤 첫 수요일. 빈자리가 있을 법한 날을 넣어야
- * "전부 0" 이 매진인지 못 읽은 것인지 가를 여지가 생긴다. 수요일인 까닭 — 월요일은 쉬는 지자체
- * 캠핑장이 많고, 월요일이 공휴일이면 휴관이 화요일로 밀린다(2026-10-05 대체공휴일에 다섯 곳,
- * 이튿날 10-06 에 여섯 곳이 전부 0 이었다. 둘 다 다음 수요일엔 비어 있었다).
+ * 표본 날짜. 첫 체크인 날과, 일주일 뒤부터 이레. 이레는 앞에서부터 묻다가 빈자리가 처음 나오면
+ * 멈춘다 — 대개 한두 번이다. 이레 내내 0 일 때만 "전부 0" 이다. 요일을 하나 정해 두지 않는 까닭은
+ * 쉬는 요일이 곳마다 달라서다(전월산·황산은 수요일, 합강은 화요일, 많은 곳이 월요일). 월요일이
+ * 공휴일이면 휴관이 화요일로 밀리기도 한다(2026-10-05 대체공휴일 → 10-06).
  */
-export function sampleDates(dates: string[]): string[] {
-  if (!dates.length) return [];
-  const wednesday = (from: string) =>
-    dates.find((date) => date >= from && new Date(`${date}T00:00:00Z`).getUTCDay() === 3);
-  const later = [wednesday(shiftISO(dates[0], 7)), wednesday(shiftISO(dates[0], 14))];
-  return [dates[0], ...later.filter((date): date is string => Boolean(date))];
+export function sampleDates(dates: string[]): { first: string; week: string[] } | null {
+  if (!dates.length) return null;
+  const from = shiftISO(dates[0], 7);
+  const to = shiftISO(dates[0], 14);
+  return { first: dates[0], week: dates.filter((date) => date >= from && date < to) };
 }
 
 export function checkCamp(campId: string): Promise<Health> {
@@ -131,49 +130,57 @@ export function checkCamp(campId: string): Promise<Health> {
       warnings.push("예약 기간 없음");
       return done();
     }
-    const dates = sampleDates(checkInDates(window));
-    if (!dates.length) {
+    const picked = sampleDates(checkInDates(window));
+    if (!picked) {
       warnings.push(`예약 기간이 지났음(${window.start}–${window.end})`);
       return done();
     }
+    const { first, week } = picked;
 
-    for (const date of dates) {
+    let firstZone: string | undefined;
+    /** 1박 한 날짜를 묻고 모양을 본다. 남은 수의 합, 못 읽었으면 null. */
+    const probe = async (date: string) => {
       try {
         const day = await provider.zoneDay(portal, camp, date, 1);
         problems.push(...shapeProblems(day, `${date} 1박`, 1));
-        if (day && !day.unanswered) {
-          if (!zones.length) zones = day.zones.map((zone) => zone.name);
-          sample[date] = day.zones.reduce((sum, zone) => sum + (day.counts[zone.no] ?? 0), 0);
-        }
+        if (!day || day.unanswered) return null;
+        if (!zones.length) zones = day.zones.map((zone) => zone.name);
+        firstZone ??= day.zones[0]?.no;
+        sample[date] = day.zones.reduce((sum, zone) => sum + (day.counts[zone.no] ?? 0), 0);
+        return sample[date];
       } catch (error) {
         problems.push(`${date} 1박: ${message(error)}`);
+        return null;
       }
+    };
+
+    let found = (await probe(first)) ?? 0;
+    for (const date of week) {
+      if (found > 0 || problems.length) break;
+      found = (await probe(date)) ?? 0;
     }
-    if (Object.keys(sample).length === dates.length && Object.values(sample).every((left) => left === 0)) {
-      warnings.push(`표본 날짜(${dates.join(", ")})가 전부 0`);
+    if (!problems.length && found === 0) {
+      const asked = Object.keys(sample);
+      warnings.push(`물어본 ${asked.length}일(${asked[0]}–${asked.at(-1)})이 전부 0`);
     }
 
     try {
-      problems.push(...shapeProblems(await provider.zoneDay(portal, camp, dates[0], 2), `${dates[0]} 2박`, 2));
+      problems.push(...shapeProblems(await provider.zoneDay(portal, camp, first, 2), `${first} 2박`, 2));
     } catch (error) {
-      problems.push(`${dates[0]} 2박: ${message(error)}`);
+      problems.push(`${first} 2박: ${message(error)}`);
     }
 
-    const firstZone = await provider
-      .zoneDay(portal, camp, dates[0], 1)
-      .then((day) => day?.zones[0]?.no)
-      .catch(() => undefined);
     if (firstZone) {
       try {
-        const rooms = await provider.roomDay(portal, camp, firstZone, dates[0], 1);
-        if (!rooms) problems.push(`${dates[0]} 객실: 응답 없음`);
+        const rooms = await provider.roomDay(portal, camp, firstZone, first, 1);
+        if (!rooms) problems.push(`${first} 객실: 응답 없음`);
         else if (rooms.rooms.length) {
           const known = new Set(rooms.rooms.map((room) => room.no));
           const stray = rooms.available.filter((no) => !known.has(no));
-          if (stray.length) problems.push(`${dates[0]} 객실: 목록에 없는 빈 객실 ${stray.slice(0, 3).join(", ")}`);
+          if (stray.length) problems.push(`${first} 객실: 목록에 없는 빈 객실 ${stray.slice(0, 3).join(", ")}`);
         }
       } catch (error) {
-        problems.push(`${dates[0]} 객실: ${message(error)}`);
+        problems.push(`${first} 객실: ${message(error)}`);
       }
     }
 
